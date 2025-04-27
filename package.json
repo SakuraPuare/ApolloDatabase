@@ -1,0 +1,26 @@
+{
+  "name": "apollodatabase",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "repository": "https://github.com/SakuraPuare/ApolloDatabase.git",
+  "author": "Steven Moder <java20131114@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -w & node --watch dist/index.js",
+    "spider:new": "node dist/spider/new_page_spider.js",
+    "spider:update": "node dist/spider/update_page_spider.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cheerio": "^1.0.0",
+    "meilisearch": "^0.50.0",
+    "prettier": "^3.5.3"
+  }
+}
