@@ -1,4 +1,4 @@
-import { MeiliSearch, TaskStatus } from "meilisearch";
+import { MeiliSearch } from "meilisearch";
 import axios from "axios"; // 建议使用 import
 import { load as cheerioLoad } from "cheerio"; // 建议使用 import
 
@@ -33,17 +33,23 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// MeiliSearch 错误类型
+interface MeiliSearchError {
+  message: string;
+  code?: string;
+}
+
 // 函数：获取或创建 MeiliSearch 索引
 export async function getOrCreateIndex(indexName: string) {
   try {
     const index = await meiliClient.getIndex(indexName);
     console.log(`已连接到 MeiliSearch 索引：${indexName}`);
     return index;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as MeiliSearchError;
     if (
-      error.code === "index_not_found" ||
-      (error.message &&
-        error.message.includes(`Index \`${indexName}\` not found`))
+      err.code === "index_not_found" ||
+      (err.message && err.message.includes(`Index \`${indexName}\` not found`))
     ) {
       console.log(`索引 ${indexName} 不存在，正在创建...`);
       try {
@@ -60,17 +66,18 @@ export async function getOrCreateIndex(indexName: string) {
         const index = await meiliClient.getIndex(indexName);
         console.log(`索引 ${indexName} 创建成功。`);
         return index;
-      } catch (creationError: any) {
+      } catch (creationError: unknown) {
+        const creationErr = creationError as MeiliSearchError;
         console.error(
           `创建 MeiliSearch 索引 ${indexName} 时出错:`,
-          creationError.message,
+          creationErr.message,
         );
         throw creationError; // 抛出错误以便调用者处理
       }
     } else {
       console.error(
         `连接或处理 MeiliSearch 索引 ${indexName} 时遇到未预期错误:`,
-        error.message,
+        err.message,
       );
       throw error; // 抛出错误
     }
@@ -79,7 +86,7 @@ export async function getOrCreateIndex(indexName: string) {
 
 export async function addDocumentsWithRetry(
   indexUid: string,
-  documents: any[],
+  documents: ArticleDocument[],
   batchSize = 1000,
   retries = 3,
 ) {
@@ -218,14 +225,15 @@ export async function fetchAndParseArticle(
         likes: likes,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status: number } };
     console.error(
       `处理文章 ID ${articleId} 时发生网络或解析错误:`,
-      error.message,
+      err.message,
     );
     // 根据错误类型决定返回状态，或者直接返回 null 表示严重错误
-    if (axios.isAxiosError(error) && error.response) {
-      return { status: error.response.status }; // 返回 HTTP 状态码
+    if (axios.isAxiosError(error) && err.response) {
+      return { status: err.response.status }; // 返回 HTTP 状态码
     }
     return null; // 其他网络错误或解析错误
   }
@@ -285,7 +293,7 @@ export async function processArticleId(
         // 其他 HTTP 错误
         return { status: ProcessArticleResultStatus.OtherHttpError };
       }
-    } catch (error) {
+    } catch {
       // 网络或解析错误 (fetchAndParseArticle 内部抛出的异常)
       if (retryCount < maxRetries) {
         // 重试

@@ -67,7 +67,7 @@ export default function SearchContainer({
         params.set("page", page.toString());
 
         router.push(`/search?${params.toString()}`, { scroll: false });
-      } catch (error) {
+      } catch {
         setState((prev) => ({
           ...prev,
           loading: false,

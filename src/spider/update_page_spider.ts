@@ -7,7 +7,6 @@ import {
   sleep,
   getOrCreateIndex,
   DELAY_MIN_MS,
-  DELAY_MAX_MS,
   processArticleId,
   ProcessArticleResultStatus,
   addDocumentsWithRetry,
@@ -24,12 +23,12 @@ async function main() {
   let index: Index<ArticleDocument>;
   try {
     index = await getOrCreateIndex(INDEX_NAME);
-  } catch (error) {
+  } catch {
     console.error("初始化 MeiliSearch 索引失败，脚本将退出。");
     return;
   }
 
-  let allArticleIds: number[] = [];
+  const allArticleIds: number[] = [];
   let offset = 0;
   let fetchedCount = 0;
 
@@ -62,9 +61,10 @@ async function main() {
         break;
       }
     }
-  } catch (error: any) {
-    console.error(`\n从 MeiliSearch 获取文档 ID 时出错：${error.message}`);
-    if (error.code === "meilisearch_communication_error") {
+  } catch (error: unknown) {
+    const err = error as { message: string; code?: string };
+    console.error(`\n从 MeiliSearch 获取文档 ID 时出错：${err.message}`);
+    if (err.code === "meilisearch_communication_error") {
       console.error("无法连接到 MeiliSearch，脚本将停止。");
     }
     return; // 停止脚本

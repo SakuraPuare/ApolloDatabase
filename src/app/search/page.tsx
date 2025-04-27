@@ -25,7 +25,7 @@ function ServerPagination({
   const maxVisiblePages = 5;
 
   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
   if (endPage - startPage + 1 < maxVisiblePages) {
     startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -201,12 +201,14 @@ async function SearchResults({
 }
 
 // 服务器端搜索页面
-export default async function SearchPage(props: {
+export default async function SearchPage({
+  searchParams,
+}: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const searchParams = await props.searchParams;
-  const query = searchParams.q || "";
-  const page = parseInt(searchParams.page || "1", 10);
+  const params = await searchParams;
+  const query = params.q || "";
+  const page = parseInt(params.page || "1", 10);
   const limit = 10;
 
   return (
