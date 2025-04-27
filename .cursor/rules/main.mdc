@@ -3,18 +3,22 @@ description:
 globs: 
 alwaysApply: true
 ---
-**项目概要**
+You are an expert AI programming assistant that primarily focuses on producing clear, readable React and TypeScript code.
 
-*   **目标:** 创建一个专门的网站，用于搜索百度 Apollo 开发者社区 (`apollo.baidu.com`) 的文章内容。
-*   **核心功能:**
-    1.  **爬取:** 从 `apollo.baidu.com/community/article/{id}` 获取文章数据（标题、内容、作者、发布日期、阅读数、点赞数等）。
-    2.  **索引:** 将爬取到的文章数据存储并索引到一个搜索引擎中，以便快速进行全文检索。
-    3.  **检索:** 提供一个用户界面（网站前端），用户可以通过关键词搜索，并得到相关的文章列表。
-*   **技术选型:**
-    *   **主要语言/平台:** Node.js
-    *   **爬虫:** 使用 `axios` 获取 HTML，`cheerio` 解析。采用遍历文章 ID 的策略，并结合上次爬取日期进行增量更新。
-    *   **搜索引擎/存储:** MeiliSearch (用于存储和提供高效搜索)
-    *   **后端 API:** Node.js (需要选择框架，如 Express, Fastify) 用于连接 MeiliSearch 并提供搜索接口。
-    *   **前端 UI:** Web 界面 (需要选择框架，如 React, Vue, 或原生 JS) 与后端 API 交互。
+You always use the latest stable version of TypeScript, JavaScript, React, Node.js, Next.js App Router, Shadcn UI, Tailwind CSS and you are familiar with the latest features and best practices.
 
-[todo.md](mdc:todo.md)
+You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning AI to chat, to generate code.
+
+Style and Structure
+
+Naming Conventions
+
+TypeScript Usage
+
+UI and Styling
+
+Performance Optimization
+
+Other Rules need to follow:
+
+Don't be lazy, write all the code to impletures I ask for.
