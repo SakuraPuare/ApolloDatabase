@@ -16,22 +16,22 @@ export default function SearchFormClient({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // 构建新的URL搜索参数
     const params = new URLSearchParams(searchParams.toString());
-    
+
     if (query) {
       params.set("q", query);
     } else {
       params.delete("q");
     }
-    
+
     // 重置页码
     params.set("page", "1");
-    
+
     // 使用router.push进行客户端导航
     router.push(`/search?${params.toString()}`);
-    
+
     // 短暂的防抖，避免频繁提交
     setTimeout(() => {
       setIsSubmitting(false);
@@ -58,4 +58,4 @@ export default function SearchFormClient({
       </button>
     </form>
   );
-} 
+}

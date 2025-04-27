@@ -9,10 +9,10 @@ interface SearchFormProps {
   disabled?: boolean;
 }
 
-export default function SearchForm({ 
-  initialQuery, 
-  onSearch, 
-  disabled = false 
+export default function SearchForm({
+  initialQuery,
+  onSearch,
+  disabled = false,
 }: SearchFormProps) {
   const [query, setQuery] = useState(initialQuery);
 
@@ -45,4 +45,4 @@ export default function SearchForm({
       </button>
     </form>
   );
-} 
+}

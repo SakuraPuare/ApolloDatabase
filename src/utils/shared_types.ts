@@ -23,4 +23,4 @@ export enum ProcessArticleResultStatus {
   NotFound, // 文章不存在 (HTTP 404 或 500, 或解析后发现内容无效)
   FetchError, // 网络错误或解析错误 (重试后仍失败)
   OtherHttpError, // 其他非 404/500 的 HTTP 错误
-} 
+}

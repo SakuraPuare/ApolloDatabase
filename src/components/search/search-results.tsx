@@ -16,7 +16,15 @@ export default function SearchResults({
   query,
 }: SearchResultsProps) {
   if (loading) {
-    return <div className="grid gap-4">{Array(3).fill(0).map((_, i) => <ArticleSkeleton key={i} />)}</div>;
+    return (
+      <div className="grid gap-4">
+        {Array(3)
+          .fill(0)
+          .map((_, i) => (
+            <ArticleSkeleton key={i} />
+          ))}
+      </div>
+    );
   }
 
   if (articles.length === 0) {
@@ -46,19 +54,25 @@ export default function SearchResults({
   );
 }
 
-function ArticleCard({ article, query }: { article: ArticleDocument; query: string }) {
+function ArticleCard({
+  article,
+  query,
+}: {
+  article: ArticleDocument;
+  query: string;
+}) {
   // 格式化时间
   const formatDate = (dateStr: string) => {
     try {
-      const date = new Date(dateStr.replace(' ', 'T') + 'Z');
-      return isNaN(date.getTime()) 
-        ? dateStr 
-        : date.toLocaleDateString('zh-CN', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+      const date = new Date(dateStr.replace(" ", "T") + "Z");
+      return isNaN(date.getTime())
+        ? dateStr
+        : date.toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           });
     } catch (e) {
       return dateStr;
@@ -68,43 +82,48 @@ function ArticleCard({ article, query }: { article: ArticleDocument; query: stri
   // 截取内容摘要
   const getContentSummary = (content: string | null) => {
     if (!content) return "无内容预览";
-    
+
     // 移除 HTML 标签
-    const textContent = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    
+    const textContent = content
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
     // 如果有搜索词，尝试提取包含搜索词的片段
     if (query) {
       const lowerQuery = query.toLowerCase();
       const lowerContent = textContent.toLowerCase();
       const index = lowerContent.indexOf(lowerQuery);
-      
+
       if (index !== -1) {
         const start = Math.max(0, index - 50);
         const end = Math.min(textContent.length, index + query.length + 50);
         let excerpt = textContent.substring(start, end);
-        
-        if (start > 0) excerpt = '...' + excerpt;
-        if (end < textContent.length) excerpt = excerpt + '...';
-        
+
+        if (start > 0) excerpt = "..." + excerpt;
+        if (end < textContent.length) excerpt = excerpt + "...";
+
         return excerpt;
       }
     }
-    
+
     // 默认返回前100个字符
-    return textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent;
+    return textContent.length > 100
+      ? textContent.substring(0, 100) + "..."
+      : textContent;
   };
 
   return (
     <article className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow">
-      <Link 
-        href={article.url} 
-        target="_blank" 
-        rel="noopener noreferrer" 
+      <Link
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer"
         className="text-xl font-medium hover:text-blue-600 transition-colors"
       >
         {article.title}
       </Link>
-      
+
       <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 mt-2 mb-3">
         {article.publishDateStr && (
           <div className="flex items-center">
@@ -112,28 +131,26 @@ function ArticleCard({ article, query }: { article: ArticleDocument; query: stri
             <span>{formatDate(article.publishDateStr)}</span>
           </div>
         )}
-        
+
         {article.author && (
           <div className="flex items-center">
             <User size={16} className="mr-1" />
             <span>{article.author}</span>
           </div>
         )}
-        
+
         <div className="flex items-center">
           <Eye size={16} className="mr-1" />
           <span>{article.views} 次浏览</span>
         </div>
-        
+
         <div className="flex items-center">
           <ThumbsUp size={16} className="mr-1" />
           <span>{article.likes} 次点赞</span>
         </div>
       </div>
-      
-      <p className="text-gray-600 mt-2">
-        {getContentSummary(article.content)}
-      </p>
+
+      <p className="text-gray-600 mt-2">{getContentSummary(article.content)}</p>
     </article>
   );
 }
@@ -151,4 +168,4 @@ function ArticleSkeleton() {
       <div className="h-4 bg-gray-200 rounded w-5/6"></div>
     </div>
   );
-} 
+}

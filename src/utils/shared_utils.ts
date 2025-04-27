@@ -250,7 +250,9 @@ export interface ProcessArticleResult {
  * @param id The article ID to process.
  * @returns A ProcessArticleResult indicating the outcome and optionally the ArticleDocument.
  */
-export async function processArticleId(id: number): Promise<ProcessArticleResult> {
+export async function processArticleId(
+  id: number,
+): Promise<ProcessArticleResult> {
   const maxRetries = 3; // 定义最大重试次数
   const articleUrl = `https://apollo.baidu.com/community/article/${id}`; // 避免重复构建 URL
 
@@ -263,8 +265,7 @@ export async function processArticleId(id: number): Promise<ProcessArticleResult
         // 成功
         const article: ArticleDocument = {
           id: result.data.id!,
-          url:
-            result.data.url || articleUrl, // 使用上面定义的 articleUrl
+          url: result.data.url || articleUrl, // 使用上面定义的 articleUrl
           title: result.data.title || "无标题",
           content: result.data.content || null,
           publishTimestamp: result.data.publishTimestamp || null,

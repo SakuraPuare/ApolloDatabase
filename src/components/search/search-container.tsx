@@ -26,7 +26,7 @@ export default function SearchContainer({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [state, setState] = useState<SearchState>({
     query: initialQuery,
     articles: [],
@@ -35,81 +35,88 @@ export default function SearchContainer({
     loading: false,
     error: null,
   });
-  
+
   const resultsPerPage = 10;
-  
-  const handleSearch = useCallback(async (query: string, page: number) => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    
-    try {
-      const { hits, totalHits } = await searchArticles(query, page, resultsPerPage);
-      setState({
-        query,
-        articles: hits,
-        totalHits,
-        page,
-        loading: false,
-        error: null,
-      });
-      
-      // 更新 URL，但不触发导航
-      const params = new URLSearchParams(searchParams.toString());
-      if (query) {
-        params.set("q", query);
-      } else {
-        params.delete("q");
+
+  const handleSearch = useCallback(
+    async (query: string, page: number) => {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+
+      try {
+        const { hits, totalHits } = await searchArticles(
+          query,
+          page,
+          resultsPerPage,
+        );
+        setState({
+          query,
+          articles: hits,
+          totalHits,
+          page,
+          loading: false,
+          error: null,
+        });
+
+        // 更新 URL，但不触发导航
+        const params = new URLSearchParams(searchParams.toString());
+        if (query) {
+          params.set("q", query);
+        } else {
+          params.delete("q");
+        }
+        params.set("page", page.toString());
+
+        router.push(`/search?${params.toString()}`, { scroll: false });
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: "搜索时发生错误，请稍后再试",
+        }));
       }
-      params.set("page", page.toString());
-      
-      router.push(`/search?${params.toString()}`, { scroll: false });
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-        error: "搜索时发生错误，请稍后再试",
-      }));
-    }
-  }, [router, searchParams]);
-  
+    },
+    [router, searchParams],
+  );
+
   // 首次加载时执行搜索
   useEffect(() => {
     if (initialQuery || initialPage > 1) {
       handleSearch(initialQuery, initialPage);
     }
   }, [initialQuery, initialPage, handleSearch]);
-  
+
   const handleSearchSubmit = (query: string) => {
     handleSearch(query, 1); // 新搜索始终从第一页开始
   };
-  
+
   const handlePageChange = (page: number) => {
     handleSearch(state.query, page);
   };
-  
+
   return (
     <div className="space-y-6">
-      <SearchForm 
-        initialQuery={state.query} 
-        onSearch={handleSearchSubmit} 
+      <SearchForm
+        initialQuery={state.query}
+        onSearch={handleSearchSubmit}
         disabled={state.loading}
       />
-      
+
       {state.error && (
         <div className="bg-red-50 text-red-800 p-4 rounded-md">
           {state.error}
         </div>
       )}
-      
+
       <div className="min-h-[50vh]">
-        <SearchResults 
-          articles={state.articles} 
-          loading={state.loading} 
-          query={state.query} 
+        <SearchResults
+          articles={state.articles}
+          loading={state.loading}
+          query={state.query}
         />
       </div>
-      
+
       {state.totalHits > 0 && (
-        <Pagination 
+        <Pagination
           currentPage={state.page}
           totalPages={Math.ceil(state.totalHits / resultsPerPage)}
           onPageChange={handlePageChange}
@@ -117,4 +124,4 @@ export default function SearchContainer({
       )}
     </div>
   );
-} 
+}

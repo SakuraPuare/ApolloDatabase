@@ -10,7 +10,7 @@ import {
   DELAY_MAX_MS,
   processArticleId,
   ProcessArticleResultStatus,
-  addDocumentsWithRetry
+  addDocumentsWithRetry,
 } from "../utils/shared_utils.js";
 
 // --- 配置参数 ---
@@ -71,26 +71,34 @@ async function main() {
   }
 
   process.stdout.write("\n"); // 换行
-  console.log(`共获取到 ${allArticleIds.length} 个文章 ID，开始批量并行更新...`);
+  console.log(
+    `共获取到 ${allArticleIds.length} 个文章 ID，开始批量并行更新...`,
+  );
 
   let updatedCount = 0;
   let fetchFailedCount = 0;
   let updateFailedCount = 0;
 
   // 按批次处理所有文章 ID
-  for (let batchStart = 0; batchStart < allArticleIds.length; batchStart += BATCH_SIZE) {
+  for (
+    let batchStart = 0;
+    batchStart < allArticleIds.length;
+    batchStart += BATCH_SIZE
+  ) {
     const batchEnd = Math.min(batchStart + BATCH_SIZE, allArticleIds.length);
     const batchIds = allArticleIds.slice(batchStart, batchEnd);
-    
-    console.log(`开始处理批次 ${Math.floor(batchStart/BATCH_SIZE) + 1}/${Math.ceil(allArticleIds.length/BATCH_SIZE)}，ID范围：${batchIds[0]}-${batchIds[batchIds.length-1]}...`);
-    
+
+    console.log(
+      `开始处理批次 ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(allArticleIds.length / BATCH_SIZE)}，ID范围：${batchIds[0]}-${batchIds[batchIds.length - 1]}...`,
+    );
+
     const updatedArticles: ArticleDocument[] = []; // 存储成功更新的文章
 
     // 分批并行处理 IDs
     for (let i = 0; i < batchIds.length; i += CONCURRENCY) {
       const chunk = batchIds.slice(i, i + CONCURRENCY);
       process.stdout.write(
-        `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `
+        `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `,
       );
 
       const promises = chunk.map(async (id) => {
@@ -99,14 +107,18 @@ async function main() {
 
         switch (result.status) {
           case ProcessArticleResultStatus.Success:
-            process.stdout.write(`\r${progress} ✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `);
+            process.stdout.write(
+              `\r${progress} ✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `,
+            );
             return result.article; // 返回文章数据
           case ProcessArticleResultStatus.NotFound:
             process.stdout.write(`\r${progress} - ID ${id} 未找到。`);
             fetchFailedCount++;
             return null;
           case ProcessArticleResultStatus.FetchError:
-            process.stdout.write(`\r${progress} ✗ ID ${id} 抓取失败（网络/解析错误）。`);
+            process.stdout.write(
+              `\r${progress} ✗ ID ${id} 抓取失败（网络/解析错误）。`,
+            );
             fetchFailedCount++;
             return null;
           case ProcessArticleResultStatus.OtherHttpError:
@@ -139,7 +151,9 @@ async function main() {
     // 批量更新文档到索引
     if (updatedArticles.length > 0) {
       try {
-        console.log(`批量更新 ${updatedArticles.length} 篇文章到 MeiliSearch...`);
+        console.log(
+          `批量更新 ${updatedArticles.length} 篇文章到 MeiliSearch...`,
+        );
         await addDocumentsWithRetry(INDEX_NAME, updatedArticles);
         updatedCount += updatedArticles.length;
         console.log(`成功更新 ${updatedArticles.length} 篇文章到索引。`);
@@ -148,13 +162,17 @@ async function main() {
         updateFailedCount += updatedArticles.length;
       }
     } else {
-      console.log(`批次 ${Math.floor(batchStart/BATCH_SIZE) + 1} 没有成功更新的文章。`);
+      console.log(
+        `批次 ${Math.floor(batchStart / BATCH_SIZE) + 1} 没有成功更新的文章。`,
+      );
     }
   }
 
   console.log(`\n文章更新完成。`);
   console.log(` - 成功提交更新到 MeiliSearch: ${updatedCount}`);
-  console.log(` - 抓取失败 (文章可能不存在、网络或其他错误): ${fetchFailedCount}`);
+  console.log(
+    ` - 抓取失败 (文章可能不存在、网络或其他错误): ${fetchFailedCount}`,
+  );
   console.log(` - 向 MeiliSearch 提交更新操作失败：${updateFailedCount}`);
   console.log("脚本执行完毕。");
 }

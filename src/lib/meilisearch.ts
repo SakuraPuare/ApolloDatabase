@@ -30,11 +30,11 @@ const getIndex = async () => {
 export async function searchArticles(
   query: string,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ) {
   const index = await getIndex();
   const offset = (page - 1) * limit;
-  
+
   // 构建搜索选项
   const searchOptions: any = {
     offset,
@@ -52,11 +52,11 @@ export async function searchArticles(
     ],
     sort: ["id:desc"],
   };
-  
+
   try {
     // 执行搜索
     const searchResults = await index.search(query, searchOptions);
-    
+
     return {
       hits: searchResults.hits as ArticleDocument[],
       totalHits: searchResults.estimatedTotalHits || 0,
@@ -90,4 +90,4 @@ export async function getArticleById(id: number) {
     console.error(`获取文章 ID ${id} 失败:`, error);
     return null;
   }
-} 
+}

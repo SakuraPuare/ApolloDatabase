@@ -77,8 +77,8 @@ async function main() {
       );
 
       if (idsToProcess.length === 0) {
-          console.log(`ID 范围 ${batchStart}-${batchEnd} 无需处理，跳过。`);
-          continue; // 跳过空批次
+        console.log(`ID 范围 ${batchStart}-${batchEnd} 无需处理，跳过。`);
+        continue; // 跳过空批次
       }
 
       console.log(`开始处理 ID 范围：${batchStart}-${batchEnd}...`);
@@ -89,7 +89,7 @@ async function main() {
       for (let i = 0; i < idsToProcess.length; i += CONCURRENCY) {
         const chunk = idsToProcess.slice(i, i + CONCURRENCY);
         process.stdout.write(
-          `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `
+          `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `,
         );
 
         const promises = chunk.map(async (id) => {
@@ -97,7 +97,9 @@ async function main() {
 
           switch (result.status) {
             case ProcessArticleResultStatus.Success:
-              process.stdout.write(`\r✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `);
+              process.stdout.write(
+                `\r✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `,
+              );
               return result.article; // 返回文章数据
             case ProcessArticleResultStatus.NotFound:
               process.stdout.write(`\r- ID ${id} 未找到。`);
@@ -108,10 +110,10 @@ async function main() {
               process.stdout.write(`\r✗ ID ${id} 抓取失败（网络/解析错误）。`);
               otherErrorCount++;
               return null; // 抓取失败
-             case ProcessArticleResultStatus.OtherHttpError:
-                process.stdout.write(`\r✗ ID ${id} HTTP 错误。`);
-                otherErrorCount++;
-                return null; // 其他 HTTP 错误
+            case ProcessArticleResultStatus.OtherHttpError:
+              process.stdout.write(`\r✗ ID ${id} HTTP 错误。`);
+              otherErrorCount++;
+              return null; // 其他 HTTP 错误
             default:
               process.stdout.write(`\r? ID ${id} 未知状态。`);
               return null;
@@ -160,7 +162,7 @@ async function main() {
           // 这里可以决定是否停止整个脚本或继续
         }
       } else {
-          console.log(`范围 ${batchStart}-${batchEnd} 没有成功抓取到新文章.`);
+        console.log(`范围 ${batchStart}-${batchEnd} 没有成功抓取到新文章.`);
       }
     }
 
@@ -171,7 +173,6 @@ async function main() {
       `错误统计：未找到 (404/500): ${notFoundCount}次，抓取/其他错误：${otherErrorCount}次`,
     );
     console.log("脚本执行完毕。");
-
   } catch (error) {
     console.error("初始化 MeiliSearch 索引失败，脚本将退出。", error);
     return;

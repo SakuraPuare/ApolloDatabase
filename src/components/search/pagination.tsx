@@ -15,40 +15,40 @@ export default function Pagination({
 }: PaginationProps) {
   // 最多显示多少个页码按钮
   const maxVisibleButtons = 5;
-  
+
   // 计算应显示哪些页码
   const getVisiblePages = () => {
     // 如果总页数小于最大可显示数量，直接显示所有页码
     if (totalPages <= maxVisibleButtons) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    
+
     // 计算左右应该显示多少页码
     const halfVisible = Math.floor(maxVisibleButtons / 2);
-    
+
     // 开始页码
     let startPage = Math.max(currentPage - halfVisible, 1);
     // 结束页码
     let endPage = startPage + maxVisibleButtons - 1;
-    
+
     // 如果结束页码超出总页数，调整开始和结束页码
     if (endPage > totalPages) {
       endPage = totalPages;
       startPage = Math.max(endPage - maxVisibleButtons + 1, 1);
     }
-    
+
     return Array.from(
       { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
+      (_, i) => startPage + i,
     );
   };
-  
+
   const visiblePages = getVisiblePages();
-  
+
   if (totalPages <= 1) {
     return null;
   }
-  
+
   return (
     <div className="flex justify-center items-center mt-8">
       <nav className="flex items-center gap-1" aria-label="分页导航">
@@ -60,7 +60,7 @@ export default function Pagination({
         >
           <ChevronLeft size={16} />
         </button>
-        
+
         {visiblePages[0] > 1 && (
           <>
             <button
@@ -76,7 +76,7 @@ export default function Pagination({
             )}
           </>
         )}
-        
+
         {visiblePages.map((page) => (
           <button
             key={page}
@@ -91,7 +91,7 @@ export default function Pagination({
             {page}
           </button>
         ))}
-        
+
         {visiblePages[visiblePages.length - 1] < totalPages && (
           <>
             {visiblePages[visiblePages.length - 1] < totalPages - 1 && (
@@ -109,7 +109,7 @@ export default function Pagination({
             </button>
           </>
         )}
-        
+
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
@@ -121,4 +121,4 @@ export default function Pagination({
       </nav>
     </div>
   );
-} 
+}
