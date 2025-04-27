@@ -11,10 +11,13 @@
     "start": "node dist/index.js",
     "dev": "tsc -w & node --watch dist/index.js",
     "spider:new": "node dist/spider/new_page_spider.js",
-    "spider:update": "node dist/spider/update_page_spider.js"
+    "spider:update": "node dist/spider/update_page_spider.js",
+    "spider:new:dev": "tsx src/spider/new_page_spider.ts",
+    "spider:update:dev": "tsx src/spider/update_page_spider.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",
+    "tsx": "^4.19.3",
     "typescript": "^5.4.5"
   },
   "dependencies": {
