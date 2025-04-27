@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { Index, MeiliSearchApiError } from "meilisearch";
+import { Index } from "meilisearch"; // 只导入 Index
 import {
   ArticleDocument,
   INDEX_NAME,
   sleep,
-  fetchAndParseArticle,
   getOrCreateIndex,
   DELAY_MIN_MS,
-  DELAY_MAX_MS,
   addDocumentsWithRetry,
+  processArticleId, // 导入 processArticleId
+  ProcessArticleResultStatus, // 导入结果状态枚举
 } from "../utils/shared_utils.js";
 
 // --- 配置参数 ---
@@ -47,6 +47,9 @@ async function main() {
   let index: Index<ArticleDocument>;
   try {
     index = await getOrCreateIndex(INDEX_NAME);
+    // 确保 'id' 可以被过滤和排序，这通常只需设置一次
+    // 可以在 getOrCreateIndex 之后，或者一个单独的设置脚本中完成
+    // 为了简化，这里保留，但知道其作用是一次性设置。
     await index.updateFilterableAttributes(["id"]);
     await index.updateSortableAttributes(["id"]);
 
@@ -56,8 +59,8 @@ async function main() {
 
     let consecutiveFailures = 0;
     let newArticlesCount = 0;
-    let notFoundCount = 0; // 404 计数
-    let otherErrorCount = 0; // 其他错误计数
+    let notFoundCount = 0; // ProcessArticleResultStatus.NotFound 计数
+    let otherErrorCount = 0; // ProcessArticleResultStatus.FetchError 或 OtherHttpError 计数
 
     console.log(`开始从 ID ${startId} 爬取新文章（并行度：${CONCURRENCY}）...`);
 
@@ -73,84 +76,52 @@ async function main() {
         (_, i) => batchStart + i,
       );
 
+      if (idsToProcess.length === 0) {
+          console.log(`ID 范围 ${batchStart}-${batchEnd} 无需处理，跳过。`);
+          continue; // 跳过空批次
+      }
+
       console.log(`开始处理 ID 范围：${batchStart}-${batchEnd}...`);
 
-      // 并行爬取所有 ID
-      const articles: ArticleDocument[] = [];
+      const articles: ArticleDocument[] = []; // 存储成功获取的文章
 
-      // 分批并行处理
+      // 分批并行处理 IDs
       for (let i = 0; i < idsToProcess.length; i += CONCURRENCY) {
-        const batch = idsToProcess.slice(i, i + CONCURRENCY);
-        const promises = batch.map(async (id) => {
-          let retryCount = 0;
-          const maxRetries = 3;
+        const chunk = idsToProcess.slice(i, i + CONCURRENCY);
+        process.stdout.write(
+          `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `
+        );
 
-          async function tryFetch(): Promise<ArticleDocument | null> {
-            try {
-              process.stdout.write(`\r爬取 ID: ${id}... `);
-              const result = await fetchAndParseArticle(id);
+        const promises = chunk.map(async (id) => {
+          const result = await processArticleId(id);
 
-              if (result && result.status === 200 && result.data) {
-                process.stdout.write(
-                  `\r✓ ID ${id}: ${result.data.title?.substring(0, 20)}... `,
-                );
-                return {
-                  id: result.data.id!,
-                  url:
-                    result.data.url ||
-                    `https://apollo.baidu.com/community/article/${id}`,
-                  title: result.data.title || "无标题",
-                  content: result.data.content || null,
-                  publishTimestamp: result.data.publishTimestamp || null,
-                  publishDateStr: result.data.publishDateStr || "",
-                  author: result.data.author || "未知作者",
-                  views: result.data.views || 0,
-                  likes: result.data.likes || 0,
-                } as ArticleDocument;
-              } else if (
-                (result && result.status === 500) ||
-                (result && result.status === 404)
-              ) {
-                // 500 就是没有找到
-                consecutiveFailures++;
-                notFoundCount++;
-                process.stdout.write(`\r- ID ${id}: Not Found`);
-                return null;
-              } else {
-                // 其他 HTTP 错误，不计入连续失败
+          switch (result.status) {
+            case ProcessArticleResultStatus.Success:
+              process.stdout.write(`\r✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `);
+              return result.article; // 返回文章数据
+            case ProcessArticleResultStatus.NotFound:
+              process.stdout.write(`\r- ID ${id} 未找到。`);
+              consecutiveFailures++; // 404/500 计入连续失败
+              notFoundCount++;
+              return null; // 未找到
+            case ProcessArticleResultStatus.FetchError:
+              process.stdout.write(`\r✗ ID ${id} 抓取失败（网络/解析错误）。`);
+              otherErrorCount++;
+              return null; // 抓取失败
+             case ProcessArticleResultStatus.OtherHttpError:
+                process.stdout.write(`\r✗ ID ${id} HTTP 错误。`);
                 otherErrorCount++;
-                process.stdout.write(
-                  `\r✗ ID ${id}: HTTP 错误 ${result?.status ?? "N/A"}`,
-                );
-                return null;
-              }
-            } catch (error) {
-              // 网络错误，尝试重试
-              if (retryCount < maxRetries) {
-                retryCount++;
-                process.stdout.write(
-                  `\r! ID ${id}: 网络错误，重试 (${retryCount}/${maxRetries})...`,
-                );
-                await sleep(1000 * retryCount); // 重试延迟递增
-                return tryFetch();
-              } else {
-                // 达到最大重试次数
-                otherErrorCount++;
-                process.stdout.write(
-                  `\r✗ ID ${id}: 网络错误，已重试 ${maxRetries} 次失败`,
-                );
-                return null;
-              }
-            }
+                return null; // 其他 HTTP 错误
+            default:
+              process.stdout.write(`\r? ID ${id} 未知状态。`);
+              return null;
           }
-
-          return tryFetch();
         });
 
-        // 等待当前批次完成
+        // 等待当前并行批次完成
         const results = await Promise.all(promises);
 
-        // 收集成功爬取的文章
+        // 收集成功的结果并重置连续失败计数
         results.forEach((article) => {
           if (article) {
             articles.push(article);
@@ -158,24 +129,26 @@ async function main() {
           }
         });
 
-        console.log(""); // 换行
+        console.log(""); // 换行，避免下一行输出覆盖当前进度
 
         // 检查连续失败次数
         if (consecutiveFailures >= CONSECUTIVE_FAILURE_LIMIT) {
           console.log(
-            `\n已连续遇到 ${CONSECUTIVE_FAILURE_LIMIT} 次失败，停止尝试更多 ID。`,
+            `\n已连续遇到 ${CONSECUTIVE_FAILURE_LIMIT} 次失败 (${notFoundCount}个未找到，${otherErrorCount}个其他错误)，停止尝试更多 ID。`,
           );
-          console.log(
-            `失败详情：404 错误：${notFoundCount}次，其他错误：${otherErrorCount}次`,
-          );
-          break;
+          break; // 退出并行批次循环
         }
 
         // 批次间的短暂延迟
         await sleep(DELAY_MIN_MS);
       }
 
-      // 批量添加文档到索引
+      // 检查是否因为连续失败而提前停止了并行批次处理
+      if (consecutiveFailures >= CONSECUTIVE_FAILURE_LIMIT) {
+        break; // 退出主批次循环
+      }
+
+      // 批量添加文档到索引 (在处理完当前 batchStart 到 batchEnd 的所有 ID 后进行)
       if (articles.length > 0) {
         try {
           console.log(`批量添加 ${articles.length} 篇文章到 MeiliSearch...`);
@@ -184,11 +157,10 @@ async function main() {
           console.log(`成功添加 ${articles.length} 篇文章到索引。`);
         } catch (error) {
           console.error(`批量添加文档失败:`, error);
+          // 这里可以决定是否停止整个脚本或继续
         }
-      }
-
-      if (consecutiveFailures >= CONSECUTIVE_FAILURE_LIMIT) {
-        break;
+      } else {
+          console.log(`范围 ${batchStart}-${batchEnd} 没有成功抓取到新文章.`);
       }
     }
 
@@ -196,9 +168,10 @@ async function main() {
       `\n新文章检查完成。本次运行共向 MeiliSearch 添加了 ${newArticlesCount} 篇新文章。`,
     );
     console.log(
-      `错误统计：404 错误：${notFoundCount}次，其他错误：${otherErrorCount}次`,
+      `错误统计：未找到 (404/500): ${notFoundCount}次，抓取/其他错误：${otherErrorCount}次`,
     );
     console.log("脚本执行完毕。");
+
   } catch (error) {
     console.error("初始化 MeiliSearch 索引失败，脚本将退出。", error);
     return;

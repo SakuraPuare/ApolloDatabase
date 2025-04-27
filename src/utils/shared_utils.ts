@@ -230,3 +230,72 @@ export async function fetchAndParseArticle(
     return null; // 其他网络错误或解析错误
   }
 }
+
+// 新增/更新的文章处理结果状态枚举
+export enum ProcessArticleResultStatus {
+  Success, // 成功抓取并解析文章数据
+  NotFound, // 文章不存在 (HTTP 404 或 500, 或解析后发现内容无效)
+  FetchError, // 网络错误或解析错误 (重试后仍失败)
+  OtherHttpError, // 其他非 404/500 的 HTTP 错误
+}
+
+// 处理单个文章 ID 的结果接口
+export interface ProcessArticleResult {
+  status: ProcessArticleResultStatus;
+  article?: ArticleDocument | null; // 仅在 Success 状态下包含文章数据
+}
+
+/**
+ * Fetches and parses a single article by ID, handling retries and status checks.
+ * @param id The article ID to process.
+ * @returns A ProcessArticleResult indicating the outcome and optionally the ArticleDocument.
+ */
+export async function processArticleId(id: number): Promise<ProcessArticleResult> {
+  const maxRetries = 3; // 定义最大重试次数
+  const articleUrl = `https://apollo.baidu.com/community/article/${id}`; // 避免重复构建 URL
+
+  async function tryFetch(retryCount = 0): Promise<ProcessArticleResult> {
+    try {
+      // 移除详细的内部日志，将日志输出移到调用方
+      const result = await fetchAndParseArticle(id);
+
+      if (result && result.status === 200 && result.data) {
+        // 成功
+        const article: ArticleDocument = {
+          id: result.data.id!,
+          url:
+            result.data.url || articleUrl, // 使用上面定义的 articleUrl
+          title: result.data.title || "无标题",
+          content: result.data.content || null,
+          publishTimestamp: result.data.publishTimestamp || null,
+          publishDateStr: result.data.publishDateStr || "",
+          author: result.data.author || "未知作者",
+          views: result.data.views || 0,
+          likes: result.data.likes || 0,
+        };
+        return { status: ProcessArticleResultStatus.Success, article };
+      } else if (
+        (result && result.status === 500) ||
+        (result && result.status === 404)
+      ) {
+        // 404 或 500 表示文章未找到
+        return { status: ProcessArticleResultStatus.NotFound };
+      } else {
+        // 其他 HTTP 错误
+        return { status: ProcessArticleResultStatus.OtherHttpError };
+      }
+    } catch (error) {
+      // 网络或解析错误 (fetchAndParseArticle 内部抛出的异常)
+      if (retryCount < maxRetries) {
+        // 重试
+        await sleep(1000 * (retryCount + 1)); // 递增重试延迟
+        return tryFetch(retryCount + 1);
+      } else {
+        // 达到最大重试次数
+        return { status: ProcessArticleResultStatus.FetchError };
+      }
+    }
+  }
+
+  return tryFetch();
+}

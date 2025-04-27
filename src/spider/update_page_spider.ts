@@ -5,15 +5,19 @@ import {
   ArticleDocument,
   INDEX_NAME,
   sleep,
-  fetchAndParseArticle,
   getOrCreateIndex,
   DELAY_MIN_MS,
   DELAY_MAX_MS,
+  processArticleId,
+  ProcessArticleResultStatus,
+  addDocumentsWithRetry
 } from "../utils/shared_utils.js";
 
 // --- 配置参数 ---
 const MAX_DOCUMENTS_PER_FETCH = 1000; // 一次从 MeiliSearch 获取多少文档 ID
 const MAX_TOTAL_DOCUMENTS_TO_UPDATE = 100000; // 防止无限循环或获取过多文档
+const CONCURRENCY = 20; // 并行爬取的数量
+const BATCH_SIZE = 100; // 批量处理的 ID 数量
 
 // 主函数
 async function main() {
@@ -67,87 +71,91 @@ async function main() {
   }
 
   process.stdout.write("\n"); // 换行
-  console.log(`共获取到 ${allArticleIds.length} 个文章 ID，开始逐个更新...`);
+  console.log(`共获取到 ${allArticleIds.length} 个文章 ID，开始批量并行更新...`);
 
   let updatedCount = 0;
   let fetchFailedCount = 0;
   let updateFailedCount = 0;
 
-  for (let i = 0; i < allArticleIds.length; i++) {
-    const id = allArticleIds[i];
-    const progress = `(${i + 1}/${allArticleIds.length})`;
+  // 按批次处理所有文章 ID
+  for (let batchStart = 0; batchStart < allArticleIds.length; batchStart += BATCH_SIZE) {
+    const batchEnd = Math.min(batchStart + BATCH_SIZE, allArticleIds.length);
+    const batchIds = allArticleIds.slice(batchStart, batchEnd);
+    
+    console.log(`开始处理批次 ${Math.floor(batchStart/BATCH_SIZE) + 1}/${Math.ceil(allArticleIds.length/BATCH_SIZE)}，ID范围：${batchIds[0]}-${batchIds[batchIds.length-1]}...`);
+    
+    const updatedArticles: ArticleDocument[] = []; // 存储成功更新的文章
 
-    process.stdout.write(`\r${progress} 尝试更新 ID: ${id}... `);
-
-    const fetchResult = await fetchAndParseArticle(id);
-
-    if (fetchResult && fetchResult.status === 200 && fetchResult.data) {
-      // 成功获取文章数据
+    // 分批并行处理 IDs
+    for (let i = 0; i < batchIds.length; i += CONCURRENCY) {
+      const chunk = batchIds.slice(i, i + CONCURRENCY);
       process.stdout.write(
-        `\r${progress} 成功获取 ID: ${id} - ${fetchResult.data.title?.substring(0, 20)}... `,
+        `\r处理 ID ${chunk[0]} 到 ${chunk[chunk.length - 1]}... `
       );
 
-      const meiliDoc: ArticleDocument = {
-        id: fetchResult.data.id!,
-        url:
-          fetchResult.data.url ||
-          `https://apollo.baidu.com/community/article/${id}`,
-        title: fetchResult.data.title || "无标题",
-        content: fetchResult.data.content || null,
-        publishTimestamp: fetchResult.data.publishTimestamp || null,
-        publishDateStr: fetchResult.data.publishDateStr || "",
-        author: fetchResult.data.author || "未知作者",
-        views: fetchResult.data.views || 0,
-        likes: fetchResult.data.likes || 0,
-      };
+      const promises = chunk.map(async (id) => {
+        const progress = `(${batchStart + i + chunk.indexOf(id) + 1}/${allArticleIds.length})`;
+        const result = await processArticleId(id);
 
-      // 使用 updateDocuments 更新 MeiliSearch
-      try {
-        // 注意：updateDocuments 也是批量的，但这里我们一次只更新一个
-        const taskResponse = await index.updateDocuments([meiliDoc]); // updateDocuments also returns a task object
-        updatedCount++;
-        process.stdout.write(` (已提交更新)`);
-        // 可选：等待任务完成
-        // await meiliClient.waitForTask(taskResponse.taskUid, { timeOutMs: 10000 });
-      } catch (meiliError: any) {
-        updateFailedCount++;
-        console.error(
-          `\n -> 更新 ID ${id} 到 MeiliSearch 失败:`,
-          meiliError.message,
-        );
-        if (meiliError.code === "meilisearch_communication_error") {
-          console.error("无法连接到 MeiliSearch，脚本将停止。");
-          return; // 停止脚本
+        switch (result.status) {
+          case ProcessArticleResultStatus.Success:
+            process.stdout.write(`\r${progress} ✓ ID ${id} 成功获取 ${result.article?.title?.substring(0, 15)}... `);
+            return result.article; // 返回文章数据
+          case ProcessArticleResultStatus.NotFound:
+            process.stdout.write(`\r${progress} - ID ${id} 未找到。`);
+            fetchFailedCount++;
+            return null;
+          case ProcessArticleResultStatus.FetchError:
+            process.stdout.write(`\r${progress} ✗ ID ${id} 抓取失败（网络/解析错误）。`);
+            fetchFailedCount++;
+            return null;
+          case ProcessArticleResultStatus.OtherHttpError:
+            process.stdout.write(`\r${progress} ✗ ID ${id} HTTP 错误。`);
+            fetchFailedCount++;
+            return null;
+          default:
+            process.stdout.write(`\r${progress} ? ID ${id} 未知状态。`);
+            fetchFailedCount++;
+            return null;
         }
-        // 其他 MeiliSearch 错误，记录并继续
-        process.stdout.write(` (更新失败)`);
-      }
-    } else {
-      // 爬取失败 (404 或其他错误)
-      fetchFailedCount++;
-      const statusMsg = fetchResult
-        ? `状态 ${fetchResult.status}`
-        : "网络/解析错误";
-      console.warn(
-        `\n -> ${progress} 爬取已存在索引的 ID ${id} 失败 (${statusMsg})。文章可能已被删除或无法访问。`,
-      );
-      // 可选：考虑是否从 MeiliSearch 中删除此文档
-      process.stdout.write(` (爬取失败)`);
+      });
+
+      // 等待当前并行批次完成
+      const results = await Promise.all(promises);
+
+      // 收集成功的结果
+      results.forEach((article) => {
+        if (article) {
+          updatedArticles.push(article);
+        }
+      });
+
+      console.log(""); // 换行，避免下一行输出覆盖当前进度
+
+      // 批次间的短暂延迟
+      await sleep(DELAY_MIN_MS);
     }
 
-    // 添加随机延迟
-    const delay = Math.random() * (DELAY_MAX_MS - DELAY_MIN_MS) + DELAY_MIN_MS;
-    await sleep(delay);
-
-    // 清除行尾可能残留的字符
-    // process.stdout.write("\r" + " ".repeat(process.stdout.columns) + "\r");
+    // 批量更新文档到索引
+    if (updatedArticles.length > 0) {
+      try {
+        console.log(`批量更新 ${updatedArticles.length} 篇文章到 MeiliSearch...`);
+        await addDocumentsWithRetry(INDEX_NAME, updatedArticles);
+        updatedCount += updatedArticles.length;
+        console.log(`成功更新 ${updatedArticles.length} 篇文章到索引。`);
+      } catch (error) {
+        console.error(`批量更新文档失败:`, error);
+        updateFailedCount += updatedArticles.length;
+      }
+    } else {
+      console.log(`批次 ${Math.floor(batchStart/BATCH_SIZE) + 1} 没有成功更新的文章。`);
+    }
   }
-  process.stdout.write("\n"); // 结束进度条输出，换行
 
   console.log(`\n文章更新完成。`);
-  console.log(` - 成功提交更新: ${updatedCount}`);
-  console.log(` - 爬取失败 (文章可能不存在了): ${fetchFailedCount}`);
-  console.log(` - MeiliSearch 更新操作失败: ${updateFailedCount}`);
+  console.log(` - 成功提交更新到 MeiliSearch: ${updatedCount}`);
+  console.log(` - 抓取失败 (文章可能不存在、网络或其他错误): ${fetchFailedCount}`);
+  console.log(` - 向 MeiliSearch 提交更新操作失败：${updateFailedCount}`);
   console.log("脚本执行完毕。");
 }
 
