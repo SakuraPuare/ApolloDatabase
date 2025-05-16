@@ -3,6 +3,7 @@ import Link from "next/link";
 import React from "react";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from "@vercel/analytics/next"
+import { SiGithub } from "react-icons/si";
 
 export default function RootLayout({
   children,
@@ -18,12 +19,20 @@ export default function RootLayout({
               <Link href="/" className="text-xl font-bold">
                 Apollo 数据库
               </Link>
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-center">
                 <Link
                   href="/search"
                   className="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors"
                 >
                   搜索
+                </Link>
+                <Link
+                  href="https://github.com/SakuraPuare/ApolloDatabase"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center"
+                >
+                  <SiGithub className="w-6 h-6" />
                 </Link>
               </div>
             </nav>
