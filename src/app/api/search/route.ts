@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     // 使用 meilisearch 执行搜索
     const { hits, totalHits } = await searchArticles(query, page, limit);
-
+    
     // 返回结果
     return NextResponse.json({
       success: true,

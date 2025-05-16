@@ -10,7 +10,6 @@ import {
 import {
   ArticleDocument,
   ProcessArticleResultStatus,
-  ProcessArticleResult,
 } from "@/lib/types";
 
 // 从 lib/meilisearch 导入 MeiliSearch 相关的常量和函数

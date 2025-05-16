@@ -1,13 +1,11 @@
 import { MeiliSearch } from "meilisearch";
 import {
   ArticleDocument,
-  ProcessArticleResultStatus,
-  ProcessArticleResult,
 } from "@/lib/types";
 
 const MEILI_HOST = process.env.MEILI_HOST || "http://localhost:7700";
 const MEILI_API_KEY = process.env.MEILI_API_KEY || ""; // 如果有 API 密钥，可以从环境变量加载
-export const INDEX_NAME = "apollo_articles"; // 这应该与爬虫使用的索引名称一致
+export const INDEX_NAME = "apollo_articles";
 
 // MeiliSearch 搜索选项类型
 interface SearchOptions {
@@ -39,11 +37,11 @@ export async function getOrCreateIndex(indexName: string) {
     const index = meiliClient.index<ArticleDocument>(indexName);
     // 尝试获取索引信息，如果存在则不会抛出 index_not_found
     await index.getRawInfo();
-    console.log(`已连接到 MeiliSearch 索引：${indexName}`);
+    // console.log(`已连接到 MeiliSearch 索引：${indexName}`);
 
     // 确保配置属性（无论是否新建）
     await index.updateFilterableAttributes(["author", "views", "likes"]);
-    await index.updateSortableAttributes(["id", "publishTimestamp"]);
+    await index.updateSortableAttributes(["publishTimestamp"]);
 
     return index;
   } catch (error: unknown) {
@@ -69,7 +67,7 @@ export async function getOrCreateIndex(indexName: string) {
 
         // 配置新创建的索引
         await index.updateFilterableAttributes(["author", "views", "likes"]);
-        await index.updateSortableAttributes(["id", "publishTimestamp"]);
+        await index.updateSortableAttributes(["publishTimestamp"]);
 
         return index;
       } catch (creationError: unknown) {
@@ -146,15 +144,6 @@ export async function addDocumentsWithRetry(
 }
 
 /**
- * 获取文章索引 - 已废弃，请直接使用 getOrCreateIndex
- * @deprecated 使用 getOrCreateIndex 代替
- */
-const getIndex = async () => {
-  // 内部调用 getOrCreateIndex 确保配置
-  return getOrCreateIndex(INDEX_NAME);
-};
-
-/**
  * 搜索文章
  * @param query 搜索关键词
  * @param page 页码（从 1 开始）
@@ -166,7 +155,7 @@ export async function searchArticles(
   page: number = 1,
   limit: number = 10,
 ) {
-  const index = await getIndex();
+  const index = await getOrCreateIndex(INDEX_NAME);
   const offset = (page - 1) * limit;
 
   // 构建搜索选项
@@ -184,12 +173,14 @@ export async function searchArticles(
       "views",
       "likes",
     ],
-    sort: ["id:desc"],
+    // sort: ["id:desc"],
   };
 
   try {
     // 执行搜索
     const searchResults = await index.search(query, searchOptions);
+    console.log(query);
+    console.log(searchResults);
 
     return {
       hits: searchResults.hits as ArticleDocument[],
@@ -217,7 +208,7 @@ export async function getLatestArticles(limit: number = 10) {
  */
 export async function getArticleById(id: number) {
   try {
-    const index = await getIndex();
+    const index = await getOrCreateIndex(INDEX_NAME);
     const article = await index.getDocument(id.toString());
     return article as ArticleDocument;
   } catch (error) {
