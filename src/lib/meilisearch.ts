@@ -2,9 +2,9 @@ import { MeiliSearch } from "meilisearch";
 import { ArticleDocument } from "@/utils/shared_types";
 
 // MeiliSearch 配置
-const MEILI_HOST = "http://localhost:7700";
-// const MEILI_API_KEY = process.env.MEILI_API_KEY; // 如果有 API 密钥，可以从环境变量加载
-const INDEX_NAME = "articles"; // 这应该与爬虫使用的索引名称一致
+const MEILI_HOST = process.env.MEILI_HOST || "http://localhost:7700";
+const MEILI_API_KEY = process.env.MEILI_API_KEY || ""; // 如果有 API 密钥，可以从环境变量加载
+const INDEX_NAME = "apollo_articles"; // 这应该与爬虫使用的索引名称一致
 
 // MeiliSearch 搜索选项类型
 interface SearchOptions {
@@ -18,7 +18,7 @@ interface SearchOptions {
 // 创建 MeiliSearch 客户端
 const meiliClient = new MeiliSearch({
   host: MEILI_HOST,
-  // apiKey: MEILI_API_KEY, // 如果有，取消注释
+  apiKey: MEILI_API_KEY, // 如果有，取消注释
 });
 
 // 获取文章索引

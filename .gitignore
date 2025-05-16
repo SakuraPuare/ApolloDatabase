@@ -138,3 +138,7 @@ dist
 yarn.lock
 
 .vscode/
+
+.env.production
+.env.development
+.env.test
