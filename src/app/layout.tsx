@@ -1,6 +1,8 @@
 import "./index.css";
 import Link from "next/link";
 import React from "react";
+import { SpeedInsights } from '@vercel/speed-insights/next';
+ 
 
 export default function RootLayout({
   children,
@@ -33,6 +35,7 @@ export default function RootLayout({
             <p>Apollo 数据库 - 百度 Apollo 官网文章搜索</p>
           </div>
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
