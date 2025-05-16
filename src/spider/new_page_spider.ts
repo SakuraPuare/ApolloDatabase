@@ -2,18 +2,26 @@
 
 import { Index } from "meilisearch"; // 只导入 Index
 import {
-  ArticleDocument,
-  INDEX_NAME,
   sleep,
-  getOrCreateIndex,
   DELAY_MIN_MS,
-  addDocumentsWithRetry,
   processArticleId, // 导入 processArticleId
-  ProcessArticleResultStatus, // 导入结果状态枚举
-} from "../utils/shared_utils.js";
+} from "../utils/shared_utils";
+
+import {
+  ArticleDocument,
+  ProcessArticleResultStatus,
+  ProcessArticleResult,
+} from "@/lib/types";
+
+// 从 lib/meilisearch 导入 MeiliSearch 相关的常量和函数
+import {
+  INDEX_NAME,
+  addDocumentsWithRetry,
+  getOrCreateIndex,
+} from "../lib/meilisearch";
 
 // --- 配置参数 ---
-const DEFAULT_START_ID = 1; // 默认开始 ID（如果索引为空）
+const DEFAULT_START_ID = 1000; // 默认开始 ID（如果索引为空）
 const MAX_ID = 3000; // 尝试到的最大 ID（需要根据观察调整）
 const CONSECUTIVE_FAILURE_LIMIT = 50; // 连续多少个失败后停止
 const CONCURRENCY = 20; // 并行爬取的数量
@@ -46,15 +54,11 @@ async function getMaxExistingId(
 async function main() {
   let index: Index<ArticleDocument>;
   try {
+    // 使用从 meilisearch.ts 导入的 getOrCreateIndex
     index = await getOrCreateIndex(INDEX_NAME);
-    // 确保 'id' 可以被过滤和排序，这通常只需设置一次
-    // 可以在 getOrCreateIndex 之后，或者一个单独的设置脚本中完成
-    // 为了简化，这里保留，但知道其作用是一次性设置。
-    await index.updateFilterableAttributes(["id"]);
-    await index.updateSortableAttributes(["id"]);
 
     // 获取当前最大 ID
-    const maxExistingId = await getMaxExistingId(index);
+    const maxExistingId = Math.max(await getMaxExistingId(index), DEFAULT_START_ID);
     const startId = maxExistingId + 1;
 
     let consecutiveFailures = 0;
@@ -154,7 +158,8 @@ async function main() {
       if (articles.length > 0) {
         try {
           console.log(`批量添加 ${articles.length} 篇文章到 MeiliSearch...`);
-          await addDocumentsWithRetry(INDEX_NAME, articles);
+          // 调用从 meilisearch.ts 导入的 addDocumentsWithRetry，不再需要传入 indexUid
+          await addDocumentsWithRetry(articles);
           newArticlesCount += articles.length;
           console.log(`成功添加 ${articles.length} 篇文章到索引。`);
         } catch (error) {

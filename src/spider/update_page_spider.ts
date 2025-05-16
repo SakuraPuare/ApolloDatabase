@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 
 import { Index } from "meilisearch";
+
+// 从 shared_utils 导入通用的 utils 函数
+import { sleep, DELAY_MIN_MS, processArticleId } from "../utils/shared_utils";
+
+// 从 lib/meilisearch 导入 MeiliSearch 相关的常量和函数
+import {
+  INDEX_NAME,
+  getOrCreateIndex,
+  addDocumentsWithRetry,
+} from "../lib/meilisearch";
+
+// 从 lib/types 导入类型和枚举
 import {
   ArticleDocument,
-  INDEX_NAME,
-  sleep,
-  getOrCreateIndex,
-  DELAY_MIN_MS,
-  processArticleId,
   ProcessArticleResultStatus,
-  addDocumentsWithRetry,
-} from "../utils/shared_utils.js";
+} from "@/lib/types";
 
 // --- 配置参数 ---
 const MAX_DOCUMENTS_PER_FETCH = 1000; // 一次从 MeiliSearch 获取多少文档 ID
@@ -22,6 +28,7 @@ const BATCH_SIZE = 100; // 批量处理的 ID 数量
 async function main() {
   let index: Index<ArticleDocument>;
   try {
+    // 使用从 meilisearch.ts 导入的 getOrCreateIndex
     index = await getOrCreateIndex(INDEX_NAME);
   } catch {
     console.error("初始化 MeiliSearch 索引失败，脚本将退出。");
@@ -154,7 +161,7 @@ async function main() {
         console.log(
           `批量更新 ${updatedArticles.length} 篇文章到 MeiliSearch...`,
         );
-        await addDocumentsWithRetry(INDEX_NAME, updatedArticles);
+        await addDocumentsWithRetry(updatedArticles);
         updatedCount += updatedArticles.length;
         console.log(`成功更新 ${updatedArticles.length} 篇文章到索引。`);
       } catch (error) {

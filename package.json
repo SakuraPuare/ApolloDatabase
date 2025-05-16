@@ -11,10 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "spider:new": "node dist/spider/new_page_spider.js",
-    "spider:update": "node dist/spider/update_page_spider.js",
-    "spider:new:dev": "tsx src/spider/new_page_spider.ts",
-    "spider:update:dev": "tsx src/spider/update_page_spider.ts"
+    "spider:new": "tsx src/spider/new_page_spider.ts",
+    "spider:update": "tsx src/spider/update_page_spider.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",

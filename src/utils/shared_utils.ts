@@ -1,141 +1,20 @@
-import { MeiliSearch } from "meilisearch";
-import axios from "axios"; // 建议使用 import
-import { load as cheerioLoad } from "cheerio"; // 建议使用 import
+import axios from "axios";
+import { load as cheerioLoad } from "cheerio";
 
-// --- 定义 MeiliSearch 文档接口 ---
-export interface ArticleDocument {
-  id: number;
-  url: string;
-  title: string;
-  content: string | null;
-  publishTimestamp: number | null;
-  publishDateStr: string;
-  author: string;
-  views: number;
-  likes: number;
-}
+// 从共享类型文件导入 ArticleDocument, ProcessArticleResultStatus, ProcessArticleResult
+import {
+  ArticleDocument,
+  ProcessArticleResultStatus,
+  ProcessArticleResult,
+} from "@/lib/types";
 
-// --- 配置参数 ---
+// --- 配置参数 (非 MeiliSearch 相关) ---
 export const DELAY_MIN_MS = 1000; // 最小延迟 (毫秒)
 export const DELAY_MAX_MS = 3000; // 最大延迟 (毫秒)
-export const MEILI_HOST = "http://localhost:7700";
-// export const MEILI_API_KEY = 'YourSecureMasterKey'; // 如果设置了 Master Key
-export const INDEX_NAME = "articles"; // MeiliSearch 索引名称
-
-// --- 配置 MeiliSearch 客户端 ---
-export const meiliClient = new MeiliSearch({
-  host: MEILI_HOST,
-  // apiKey: MEILI_API_KEY,
-});
 
 // 函数：添加延迟
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// MeiliSearch 错误类型
-interface MeiliSearchError {
-  message: string;
-  code?: string;
-}
-
-// 函数：获取或创建 MeiliSearch 索引
-export async function getOrCreateIndex(indexName: string) {
-  try {
-    const index = await meiliClient.getIndex(indexName);
-    console.log(`已连接到 MeiliSearch 索引：${indexName}`);
-    return index;
-  } catch (error: unknown) {
-    const err = error as MeiliSearchError;
-    if (
-      err.code === "index_not_found" ||
-      (err.message && err.message.includes(`Index \`${indexName}\` not found`))
-    ) {
-      console.log(`索引 ${indexName} 不存在，正在创建...`);
-      try {
-        const taskResponse = await meiliClient.createIndex(indexName, {
-          primaryKey: "id",
-        });
-        console.log(
-          `创建索引任务已提交，Task UID: ${taskResponse.taskUid}. 等待创建完成...`,
-        );
-        await meiliClient.tasks.waitForTask(taskResponse.taskUid, {
-          timeout: 60000,
-          interval: 100,
-        });
-        const index = await meiliClient.getIndex(indexName);
-        console.log(`索引 ${indexName} 创建成功。`);
-        return index;
-      } catch (creationError: unknown) {
-        const creationErr = creationError as MeiliSearchError;
-        console.error(
-          `创建 MeiliSearch 索引 ${indexName} 时出错:`,
-          creationErr.message,
-        );
-        throw creationError; // 抛出错误以便调用者处理
-      }
-    } else {
-      console.error(
-        `连接或处理 MeiliSearch 索引 ${indexName} 时遇到未预期错误:`,
-        err.message,
-      );
-      throw error; // 抛出错误
-    }
-  }
-}
-
-export async function addDocumentsWithRetry(
-  indexUid: string,
-  documents: ArticleDocument[],
-  batchSize = 1000,
-  retries = 3,
-) {
-  const index = meiliClient.index(indexUid);
-  for (let i = 0; i < documents.length; i += batchSize) {
-    const batch = documents.slice(i, i + batchSize);
-    let attempt = 0;
-    while (attempt < retries) {
-      try {
-        console.log(
-          `Attempt ${attempt + 1}: Adding batch ${
-            i / batchSize + 1
-          } to index "${indexUid}"...`,
-        );
-        const taskResponse = await index.addDocuments(batch);
-        console.log(
-          `Task ${taskResponse.taskUid} created for batch ${
-            i / batchSize + 1
-          }. Waiting for completion...`,
-        );
-        await meiliClient.tasks.waitForTask(taskResponse.taskUid, {
-          timeout: 60000,
-          interval: 100,
-        });
-        console.log(`Batch ${i / batchSize + 1} added successfully.`);
-        break; // Success, exit retry loop
-      } catch (error) {
-        attempt++;
-        console.error(
-          `Error adding batch ${i / batchSize + 1} (Attempt ${attempt}):`,
-          error,
-        );
-        if (attempt >= retries) {
-          console.error(
-            `Failed to add batch ${
-              i / batchSize + 1
-            } after ${retries} attempts.`,
-          );
-          // Optionally re-throw the error or handle it differently
-          throw error;
-        }
-        // Wait before retrying (e.g., exponential backoff)
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)),
-        );
-      }
-    }
-  }
-  console.log(`All documents added to index "${indexUid}".`);
 }
 
 // 函数：获取文章详情并解析
@@ -237,20 +116,6 @@ export async function fetchAndParseArticle(
     }
     return null; // 其他网络错误或解析错误
   }
-}
-
-// 新增/更新的文章处理结果状态枚举
-export enum ProcessArticleResultStatus {
-  Success, // 成功抓取并解析文章数据
-  NotFound, // 文章不存在 (HTTP 404 或 500, 或解析后发现内容无效)
-  FetchError, // 网络错误或解析错误 (重试后仍失败)
-  OtherHttpError, // 其他非 404/500 的 HTTP 错误
-}
-
-// 处理单个文章 ID 的结果接口
-export interface ProcessArticleResult {
-  status: ProcessArticleResultStatus;
-  article?: ArticleDocument | null; // 仅在 Success 状态下包含文章数据
 }
 
 /**
