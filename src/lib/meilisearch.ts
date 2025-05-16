@@ -173,7 +173,7 @@ export async function searchArticles(
       "views",
       "likes",
     ],
-    // sort: ["id:desc"],
+    sort: ["publishTimestamp:desc"],
   };
 
   try {
