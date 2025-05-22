@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import readline from "readline";
 import crypto from "crypto";
 import puppeteer, { Browser } from "puppeteer";
-import { Index as MeiliIndex } from "meilisearch";
+import { Index as MeiliIndex, MeiliSearchApiError } from "meilisearch";
 
 // 导入 MeiliSearch 相关的常量和函数
 import { getOrCreateIndex, addDocumentsWithRetry } from "@/lib/meilisearch";
@@ -127,13 +127,34 @@ async function isUrlRecorded(url: string): Promise<boolean> {
       await index.getDocument(urlId);
       return true; // 文档存在，表示 URL 已被处理或记录
     } catch (e: unknown) {
-      if ((e as { code?: string })?.code === "document_not_found") {
+      // 检查 e 是否是 MeiliSearchApiError 并且其 cause.code 或直接的 code 指示 'document_not_found'
+      // 这与日志中观察到的结构以及 MeiliSearch SDK 的典型行为一致。
+      if (
+        e instanceof MeiliSearchApiError &&
+        e.cause &&
+        typeof e.cause === 'object' && // 确保 cause 是一个对象
+        'code' in e.cause &&           // 确保 'code' 属性存在于 cause 中
+        (e.cause as { code: unknown }).code === 'document_not_found'
+      ) {
         return false; // 文档不存在
       }
+      // 作为备选，检查顶层的 e.code，MeiliSearch SDK 通常在此处放置特定的 API 错误代码。
+      if (e instanceof MeiliSearchApiError && e.message === 'document_not_found') {
+          return false; // 文档不存在
+      }
+
+      // 如果错误不是 'document_not_found' 或不是 MeiliSearchApiError，
+      // 则在此特定处理路径中视为意外错误。记录并重新抛出。
+      console.warn(
+        `[isUrlRecorded] 检查文档 ${urlId} (URL: ${url}) 时发生意外错误。将重新抛出此错误。`,
+        e, // 记录实际的错误对象
+      );
       throw e; // 重新抛出其他错误
     }
   } catch (error) {
-    console.error(`检查 URL 记录状态失败：${url}`, error);
+    // 此外部 catch 处理来自 getTypedUrlIndex() 的错误或从内部 catch 重新抛出的错误。
+    // 这些被认为是该函数操作中更普遍的故障。
+    console.error(`[isUrlRecorded] 因错误无法检查 URL ${url} 的记录状态:`, error);
     return true; // 出错时保守处理，假设已记录，避免重复处理
   }
 }
