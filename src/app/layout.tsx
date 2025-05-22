@@ -4,6 +4,7 @@ import React from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { SiGithub } from "react-icons/si";
+import { version } from "@/../package.json";
 
 export default function RootLayout({
   children,
@@ -42,6 +43,7 @@ export default function RootLayout({
         <footer className="border-t border-gray-200 mt-8">
           <div className="container mx-auto py-6 px-4 text-center text-gray-500">
             <p>Apollo 数据库 - 百度 Apollo 官网文章搜索</p>
+            <p> v{version} </p>
           </div>
         </footer>
         <SpeedInsights />
