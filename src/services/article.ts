@@ -1,4 +1,4 @@
-import { getOrCreateIndex } from "@/lib/meilisearch";
+import { getOrCreateIndex, IndexConfig } from "@/lib/meilisearch";
 import { ArticleDocument } from "@/lib/types";
 import { MeiliSearchApiError, ErrorStatusCode } from "meilisearch";
 
@@ -11,7 +11,35 @@ interface SearchOptions {
   filter?: string;
 }
 
+// 文章索引配置
+const ARTICLE_INDEX_CONFIG: IndexConfig = {
+  primaryKey: "id",
+  filterableAttributes: [
+    "author",
+    "views",
+    "likes",
+    "status",
+    "crawledAt",
+    "publishTimestamp",
+    "id",
+    "url",
+    "title",
+  ],
+  sortableAttributes: ["publishTimestamp", "views", "likes", "crawledAt"],
+};
+
 export const ARTICLE_INDEX_NAME = "apollo_articles"; // 统一定义文章索引名称
+
+/**
+ * 获取文章索引
+ * @returns 文章索引实例
+ */
+async function getArticleIndex() {
+  return getOrCreateIndex<ArticleDocument>(
+    ARTICLE_INDEX_NAME,
+    ARTICLE_INDEX_CONFIG,
+  );
+}
 
 /**
  * 搜索文章
@@ -25,7 +53,7 @@ export async function searchArticles(
   page: number = 1,
   limit: number = 10,
 ) {
-  const index = await getOrCreateIndex<ArticleDocument>(ARTICLE_INDEX_NAME);
+  const index = await getArticleIndex();
   const offset = (page - 1) * limit;
 
   // 构建搜索选项
@@ -78,7 +106,7 @@ export async function getLatestArticles(limit: number = 10) {
  */
 export async function getArticleById(id: number | string) {
   try {
-    const index = await getOrCreateIndex<ArticleDocument>(ARTICLE_INDEX_NAME);
+    const index = await getArticleIndex();
     // MeiliSearch getDocument expects a string ID
     const article = await index.getDocument(String(id));
     return article;

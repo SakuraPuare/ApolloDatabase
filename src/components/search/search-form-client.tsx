@@ -2,12 +2,17 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, FormEvent } from "react";
+import { SearchType } from "@/lib/types";
+
+interface SearchFormClientProps {
+  initialQuery?: string;
+  searchType: SearchType;
+}
 
 export default function SearchFormClient({
   initialQuery = "",
-}: {
-  initialQuery?: string;
-}) {
+  searchType = SearchType.Article,
+}: SearchFormClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(initialQuery);
@@ -25,6 +30,9 @@ export default function SearchFormClient({
     } else {
       params.delete("q");
     }
+
+    // 保留搜索类型
+    params.set("type", searchType);
 
     // 重置页码
     params.set("page", "1");
@@ -44,7 +52,11 @@ export default function SearchFormClient({
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="输入关键词搜索文章..."
+        placeholder={
+          searchType === SearchType.Article
+            ? "输入关键词搜索文章..."
+            : "输入关键词搜索文档..."
+        }
         className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <button

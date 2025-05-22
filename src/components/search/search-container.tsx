@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArticleDocument } from "@/utils/shared_types";
+import { ArticleDocument } from "@/lib/types";
 import SearchForm from "./search-form";
 import SearchResults from "./search-results";
 import Pagination from "./pagination";

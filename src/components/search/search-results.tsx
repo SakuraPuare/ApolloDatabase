@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArticleDocument } from "@/utils/shared_types";
+import { ArticleDocument } from "@/lib/types";
 import { Calendar, User, Eye, ThumbsUp } from "lucide-react";
 
 interface SearchResultsProps {

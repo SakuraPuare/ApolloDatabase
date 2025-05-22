@@ -12,6 +12,26 @@ export interface ArticleDocument {
   [key: string]: unknown; // 添加索引签名
 }
 
+// --- 文档文档接口定义 ---
+export interface DocDocument {
+  id: string;
+  url: string;
+  title: string;
+  content: string | null;
+  path: string; // 文档路径
+  category: string; // 文档分类
+  updateTimestamp: number | null;
+  updateDateStr: string;
+  crawledAt: string;
+  [key: string]: unknown; // 添加索引签名
+}
+
+// 搜索类型枚举
+export enum SearchType {
+  Article = "article",
+  Doc = "doc",
+}
+
 // 新增/更新的文章处理结果状态枚举
 export enum ProcessArticleResultStatus {
   Success, // 成功抓取并解析文章数据
