@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import readline from "readline";
 import crypto from "crypto";
 import puppeteer, { Browser } from "puppeteer";
-import { MeiliSearch, Index as MeiliIndex } from "meilisearch";
+import { Index as MeiliIndex } from "meilisearch";
 
 // 导入 MeiliSearch 相关的常量和函数
 import { getOrCreateIndex, addDocumentsWithRetry } from "@/lib/meilisearch";
@@ -48,6 +48,7 @@ interface CrawledUrlRecord {
   status: "crawled" | "queued" | "error";
   crawledAt?: string;
   errorMessage?: string;
+  [key: string]: unknown; // 添加索引签名以满足 Record<string, unknown>
 }
 
 // URL 队列 - 使用 Set 以优化性能
@@ -60,18 +61,10 @@ function generateUrlId(url: string): string {
   return crypto.createHash("md5").update(url).digest("hex");
 }
 
-// MeiliSearch Client Instance getter
-async function getMeiliClient(): Promise<MeiliSearch> {
-  const meiliHost = process.env.MEILI_HOST || "http://localhost:7700";
-  const meiliApiKey = process.env.MEILI_API_KEY || "";
-  return new MeiliSearch({ host: meiliHost, apiKey: meiliApiKey });
-}
 
 // Typed accessor for URL tracking index
 async function getTypedUrlIndex(): Promise<MeiliIndex<CrawledUrlRecord>> {
-  const client = await getMeiliClient();
-  // Assumes initializeUrlIndex has created and configured it.
-  return client.index<CrawledUrlRecord>(URL_INDEX_NAME);
+  return getOrCreateIndex<CrawledUrlRecord>(URL_INDEX_NAME);
 }
 
 /**
@@ -101,42 +94,19 @@ function isUrlBlacklisted(url: string): boolean {
  */
 async function initializeUrlIndex() {
   try {
-    const client = await getMeiliClient();
-
     // For DOCS_INDEX_NAME, use the imported getOrCreateIndex with specific type
     const docsIndex =
       await getOrCreateIndex<CrawledPageDocument>(DOCS_INDEX_NAME);
-    console.log(`文档索引 ${DOCS_INDEX_NAME} 初始化成功`);
+    console.log(`文档索引 ${DOCS_INDEX_NAME} 初始化成功 (或已存在)`);
 
-    // For URL_INDEX_NAME, handle creation and configuration here
-    let urlIndex: MeiliIndex<CrawledUrlRecord>;
-    try {
-      urlIndex = client.index<CrawledUrlRecord>(URL_INDEX_NAME);
-      await urlIndex.getRawInfo(); // Check existence
-      console.log(`URL 追踪索引 ${URL_INDEX_NAME} 已存在。`);
-    } catch (error: unknown) {
-      // 根据错误日志，'index_not_found' 状态码在 error.cause.code 中
-      // MeiliSearch API errors often have a 'cause' property with more details.
-      const cause = (error as { cause?: { code?: string } })?.cause;
-      if (cause?.code === "index_not_found") {
-        console.log(
-          `URL 追踪索引 ${URL_INDEX_NAME} 不存在，正在创建 (主键：id)...`,
-        );
-        const task = await client.createIndex(URL_INDEX_NAME, {
-          primaryKey: "id",
-        });
-        // The line below uses client.tasks.waitForTask, which is a standard way to wait for a task in recent MeiliSearch SDKs.
-        // If you encounter type errors here, ensure your MeiliSearch SDK and its type definitions are up-to-date.
-        await client.tasks.waitForTask(task.taskUid);
-        urlIndex = client.index<CrawledUrlRecord>(URL_INDEX_NAME); // Re-fetch after creation
-        console.log(`URL 追踪索引 ${URL_INDEX_NAME} 创建成功。`);
-      } else {
-        console.error(`检查或创建 URL 追踪索引 ${URL_INDEX_NAME} 失败:`, error);
-        throw error;
-      }
-    }
+    // For URL_INDEX_NAME, use getOrCreateIndex
+    const urlIndex = await getOrCreateIndex<CrawledUrlRecord>(URL_INDEX_NAME);
+    console.log(`URL 追踪索引 ${URL_INDEX_NAME} 初始化成功 (或已存在)`);
+
+    // Update filterable attributes for URL_INDEX_NAME
+    // This needs to be done regardless of whether the index was just created or already existed.
     await urlIndex.updateFilterableAttributes(["status", "crawledAt"]);
-    console.log(`URL 追踪索引 ${URL_INDEX_NAME} 初始化并配置完成。`);
+    console.log(`URL 追踪索引 ${URL_INDEX_NAME} 的可过滤属性已配置。`);
 
     return { docsIndex, urlIndex };
   } catch (error) {
