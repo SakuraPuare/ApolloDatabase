@@ -12,9 +12,11 @@
     "start": "next start",
     "lint": "next lint",
     "spider:new": "tsx src/spider/new_page_spider.ts",
-    "spider:update": "tsx src/spider/update_page_spider.ts"
+    "spider:update": "tsx src/spider/update_page_spider.ts",
+    "spider:apollo": "tsx src/spider/apolloDocSpider.ts"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^22.15.2",
     "@types/react": "19.1.2",
     "eslint": "^9",
@@ -31,11 +33,13 @@
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jsdom": "^26.1.0",
     "lucide-react": "^0.503.0",
     "meilisearch": "^0.50.0",
     "next": "^15.3.1",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
+    "puppeteer": "^24.9.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
