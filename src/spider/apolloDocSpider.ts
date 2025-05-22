@@ -30,6 +30,9 @@ const BLACKLISTED_PATHS: string[] = [
 const URL_INDEX_NAME = "apollo_crawled_urls"; // 专门用于追踪已爬取的 URL
 const DOCS_INDEX_NAME = "apollo_docs";
 
+// 新增并发控制常量
+const MAX_CONCURRENT_CRAWLS = 5; // 设置最大并发爬取数量，例如 5
+
 interface PageData {
   id: string; // 使用 URL 的 MD5 哈希作为 ID
   url: string;
@@ -500,8 +503,8 @@ async function startCrawler() {
     const cookies = await getCookies(); // 这是 cookie 字符串
 
     // 恢复之前中断的队列状态
-    const queuedUrls = await restoreQueueFromIndex();
-    urlQueue.push(...queuedUrls.filter((url) => !isUrlBlacklisted(url))); // 恢复时也过滤黑名单
+    const restoredUrls = await restoreQueueFromIndex();
+    urlQueue.push(...restoredUrls.filter((url) => !isUrlBlacklisted(url))); // 恢复时也过滤黑名单
 
     // 如果队列为空，添加入口 URL
     if (urlQueue.length === 0 && BASE_URL) {
@@ -523,83 +526,131 @@ async function startCrawler() {
       }
     }
 
-    // 开始爬取
-    console.log("开始爬取 Apollo 文档...");
+    console.log(`开始并发爬取 Apollo 文档 (最大并发数：${MAX_CONCURRENT_CRAWLS})...`);
 
     let processedCount = 0;
     let successCount = 0;
     let errorCount = 0;
+    let activeCrawls = 0;
+    const allTasksPromises: Promise<void>[] = []; // 存储所有处理任务的 Promise
 
-    while (urlQueue.length > 0) {
-      const url = urlQueue.shift()!;
-
-      // 再次检查是否已爬取（可能在队列中有重复或已被其他过程标记）
-      // 注意：isUrlCrawled 检查的是 status=crawled 或 status=error 的文档是否存在
-      // 如果一个 URL 之前被标记为 queued 但未成功爬取，它应该被重新尝试
-      // 因此，我们主要关心的是，如果一个 URL 被明确标记为 crawled 了，就跳过。
-      // 或者，如果因为错误太多次，我们也可以决定跳过 (但这需要更复杂的逻辑)。
-      // 简单的 isUrlCrawled 检查已经包含了对 'crawled' 状态的判断，所以这里逻辑上可以简化。
-      // 确保在 updateUrlStatus 中正确更新状态。
-
-      const urlId = generateUrlId(url);
-      const urlIndexInstance = await getTypedUrlIndex();
-      let docStatus: CrawledUrlRecord | null = null;
+    // 封装单个 URL 的处理逻辑
+    const processSingleUrl = async (urlToProcess: string) => {
       try {
-        // urlIndexInstance is typed as MeiliIndex<CrawledUrlRecord>,
-        // so getDocument(urlId) should return Promise<CrawledUrlRecord>.
-        // The explicit cast `as CrawledUrlRecord` is generally not needed if types are correctly inferred.
-        const documentData = await urlIndexInstance.getDocument(urlId);
-        docStatus = documentData;
-      } catch (e: unknown) {
-        if ((e as { code?: string })?.code === "document_not_found") {
-          docStatus = null; // 文档不存在是正常情况
-        } else {
-          console.warn(`从 URL 索引获取文档 ${urlId} 失败:`, e);
-          // 可以考虑重试或跳过该 URL 的逻辑
+        const urlId = generateUrlId(urlToProcess);
+        const urlIndexInstance = await getTypedUrlIndex();
+        let docStatus: CrawledUrlRecord | null = null;
+        try {
+          docStatus = await urlIndexInstance.getDocument(urlId);
+        } catch (e: unknown) {
+          if ((e as { code?: string })?.code !== "document_not_found") {
+            console.warn(
+              `[${urlToProcess}] 从 URL 索引获取文档 ${urlId} 失败:`,
+              e,
+            );
+          }
+          // 如果找不到文档，docStatus 保持 null，是正常情况
         }
-      }
 
-      if (docStatus && docStatus.status === "crawled") {
-        console.log(`URL 已成功爬取过，跳过：${url}`);
-        continue;
-      }
+        if (docStatus && docStatus.status === "crawled") {
+          console.log(
+            `[${urlToProcess}] URL 已成功爬取过，跳过。`,
+          );
+          return; // 直接返回，不计入 processedCount
+        }
 
-      // 爬取页面，传入 browser 实例和 cookie 字符串
-      const pageData = await crawlPage(url, cookies, browser);
-      processedCount++;
+        // crawlPage 和 savePage 逻辑
+        const pageData = await crawlPage(urlToProcess, cookies, browser!);
+        processedCount++; // 计入已处理（无论成功失败）
 
-      // 保存页面
-      if (pageData) {
-        const saved = await savePage(pageData); // savePage 内部会调用 updateUrlStatus
-        if (saved) {
-          successCount++;
+        if (pageData) {
+          const saved = await savePage(pageData); // savePage 内部会调用 updateUrlStatus 和更新 urlQueue
+          if (saved) {
+            successCount++;
+          } else {
+            errorCount++;
+            // savePage 内部出错时也会调用 updateUrlStatus('error')
+          }
         } else {
           errorCount++;
-          // savePage 内部出错时也会调用 updateUrlStatus('error')
+          // crawlPage 返回 null 时，内部已调用 updateUrlStatus('error')
         }
-      } else {
+      } catch (err) {
+        console.error(
+          `[${urlToProcess}] 处理时发生顶层错误:`,
+          err,
+        );
         errorCount++;
-        // crawlPage 返回 null 时，内部已调用 updateUrlStatus('error')
+        // 确保在未知错误时也更新状态
+        await updateUrlStatus(
+          urlToProcess,
+          "error",
+          err instanceof Error ? err.message : "未知爬取错误",
+        );
+      } finally {
+        activeCrawls--;
+        console.log(
+          `[并发:${activeCrawls}/${MAX_CONCURRENT_CRAWLS}] 完成：${urlToProcess}. 队列：${urlQueue.length}`,
+        );
+        // 每处理 N 个 URL，输出一次状态 (可选，或者移到主循环外)
+        if (processedCount > 0 && processedCount % 10 === 0) {
+          console.log(`----爬取进度----`);
+          console.log(`已处理 URL 总数：${processedCount}`);
+          console.log(`成功：${successCount}`);
+          console.log(`失败：${errorCount}`);
+          console.log(`队列中剩余 URL：${urlQueue.length}`);
+          console.log(`当前活动并发任务：${activeCrawls}`);
+          console.log(`--------------`);
+        }
+      }
+    };
+
+    // 主控制循环
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // 当活动爬取数小于最大并发数，并且队列中有 URL 时，启动新的爬取任务
+      while (
+        activeCrawls < MAX_CONCURRENT_CRAWLS &&
+        urlQueue.length > 0
+      ) {
+        const currentUrl = urlQueue.shift()!; // 从队列中取出一个 URL
+        activeCrawls++;
+        console.log(
+          `[并发:${activeCrawls}/${MAX_CONCURRENT_CRAWLS}] 开始：${currentUrl}. 队列：${urlQueue.length}`,
+        );
+        const taskPromise = processSingleUrl(currentUrl);
+        allTasksPromises.push(taskPromise);
       }
 
-      // 控制爬取速度
-      await sleep(DELAY_MIN_MS);
-
-      // 每处理 10 个 URL，输出一次状态
-      if (processedCount % 10 === 0) {
-        console.log(`----爬取进度----`);
-        console.log(`已处理：${processedCount}`);
-        console.log(`成功：${successCount}`);
-        console.log(`失败：${errorCount}`);
-        console.log(`队列中：${urlQueue.length}`);
-        console.log(`--------------`);
+      // 如果队列已空且没有活动爬取任务，则表示所有已知 URL 都已处理或正在处理完成
+      if (urlQueue.length === 0 && activeCrawls === 0) {
+        break; // 退出主循环
       }
+
+      // 短暂休眠，避免 CPU 空转，并给任务完成和队列填充的机会
+      // DELAY_MIN_MS (默认 1000ms) 可能太长，用一个较小值
+      await sleep(100); // e.g., 100ms
     }
 
+    // 等待所有已启动的任务完成
+    console.log(
+      "所有 URL 已加入处理或已在队列中处理完毕，等待剩余任务最终完成...",
+    );
+    await Promise.all(
+      allTasksPromises.map((p) =>
+        p.catch((e) =>
+          console.error(
+            "一个爬取任务最终失败 (错误应已在 processSingleUrl 内部处理过):",
+            e,
+          ),
+        ),
+      ),
+    );
+
     console.log("爬取完成！");
-    console.log(`总共处理了 ${processedCount} 个 URL`);
-    console.log(`成功爬取：${successCount}`);
-    console.log(`失败：${errorCount}`);
+    console.log(`总共尝试处理了 ${processedCount} 个 URL`);
+    console.log(`成功爬取并保存：${successCount}`);
+    console.log(`处理失败：${errorCount}`);
 
     // 爬取完成后的统计数据
     const docsIndex =
@@ -620,39 +671,39 @@ async function startCrawler() {
 /**
  * 调试函数：删除所有相关的 MeiliSearch 索引
  */
-// async function debugDeleteIndices() {
-//     console.log("--- 开始删除索引 ---");
-//     try {
-//         const client = await getMeiliClient();
+async function debugDeleteIndices() {
+  console.log("--- 开始删除索引 ---");
+  try {
+    const client = await getMeiliClient();
 
-//         try {
-//             await client.deleteIndex(DOCS_INDEX_NAME);
-//             console.log(`索引 ${DOCS_INDEX_NAME} 已成功删除。`);
-//         } catch (error: unknown) {
-//             if ((error as { code?: string })?.code === "index_not_found") {
-//                 console.log(`索引 ${DOCS_INDEX_NAME} 不存在，无需删除。`);
-//             } else {
-//                 console.error(`删除索引 ${DOCS_INDEX_NAME} 失败:`, error);
-//             }
-//         }
+    try {
+      await client.deleteIndex(DOCS_INDEX_NAME);
+      console.log(`索引 ${DOCS_INDEX_NAME} 已成功删除。`);
+    } catch (error: unknown) {
+      if ((error as { code?: string })?.code === "index_not_found") {
+        console.log(`索引 ${DOCS_INDEX_NAME} 不存在，无需删除。`);
+      } else {
+        console.error(`删除索引 ${DOCS_INDEX_NAME} 失败:`, error);
+      }
+    }
 
-//         // 2. 删除 URL 追踪索引 (URL_INDEX_NAME)
-//         try {
-//             await client.deleteIndex(URL_INDEX_NAME);
-//             console.log(`索引 ${URL_INDEX_NAME} 已成功删除。`);
-//         } catch (error: unknown) {
-//             if ((error as { code?: string })?.code === "index_not_found") {
-//                 console.log(`索引 ${URL_INDEX_NAME} 不存在，无需删除。`);
-//             } else {
-//                 console.error(`删除索引 ${URL_INDEX_NAME} 失败:`, error);
-//             }
-//         }
+    // 2. 删除 URL 追踪索引 (URL_INDEX_NAME)
+    try {
+      await client.deleteIndex(URL_INDEX_NAME);
+      console.log(`索引 ${URL_INDEX_NAME} 已成功删除。`);
+    } catch (error: unknown) {
+      if ((error as { code?: string })?.code === "index_not_found") {
+        console.log(`索引 ${URL_INDEX_NAME} 不存在，无需删除。`);
+      } else {
+        console.error(`删除索引 ${URL_INDEX_NAME} 失败:`, error);
+      }
+    }
 
-//         console.log("--- 索引删除操作完成 ---");
-//     } catch (error) {
-//         console.error("删除索引过程中发生错误：", error);
-//     }
-// }
+    console.log("--- 索引删除操作完成 ---");
+  } catch (error) {
+    console.error("删除索引过程中发生错误：", error);
+  }
+}
 
 // 如果需要执行删除操作，可以取消下面的注释并运行此文件：
 // debugDeleteIndices().then(() => console.log('调试任务完成。')).catch(err => console.error('调试任务失败：', err));
