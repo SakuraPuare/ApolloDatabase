@@ -6,29 +6,45 @@
   <img src="https://img.shields.io/badge/TypeScript-5.4.5-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-4.1.4-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Meilisearch-0.50.0-ff69b4?style=flat-square" alt="Meilisearch" />
+  <img src="https://img.shields.io/badge/Shadcn_UI-latest-8A2BE2?style=flat-square" alt="Shadcn UI" />
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT" />
 </div>
 
 ## 📝 项目简介
 
-ApolloDatabase 是一个专为百度 Apollo（自动驾驶开放平台）官方文档设计的搜索平台。该平台通过爬虫自动获取并索引 Apollo 官网的文章内容，并提供高效、智能的全文搜索功能，帮助开发者和用户快速找到所需的 Apollo 相关技术文档和信息。
+ApolloDatabase 是一个高性能的文档搜索平台，专为百度 Apollo（自动驾驶开放平台）官方文档设计。该平台采用现代化的前端技术栈和高效的搜索引擎，通过智能爬虫自动获取并索引 Apollo 官网的技术文档内容，为开发者和用户提供快速、准确的全文搜索服务，大幅提升信息检索效率。
 
 ## ✨ 主要功能
 
-- **强大的搜索功能**：基于 Meilisearch 的全文搜索，支持关键词高亮显示
-- **自动内容爬取**：定期自动爬取百度 Apollo 官网最新文章
-- **增量更新**：智能检测并仅爬取新增或更新的内容
-- **美观的用户界面**：基于 React 和 Tailwind CSS 的现代化响应式界面
-- **服务端渲染**：基于 Next.js App Router 的服务端渲染，提供更好的性能和 SEO
-- **分页浏览**：支持搜索结果分页查看
+- **高性能全文搜索**：基于 Meilisearch 搜索引擎，支持模糊匹配、拼写纠错和多语言搜索
+- **关键词智能高亮**：搜索结果中自动高亮显示匹配关键词，提升阅读体验
+- **自动内容爬取**：定期自动爬取百度 Apollo 官网最新文章，保持内容时效性
+- **增量更新机制**：智能检测并仅爬取新增或更新的内容，减少系统资源占用
+- **响应式现代界面**：基于 React 19、Next.js 15 和 Tailwind CSS 4 构建的美观响应式界面
+- **服务端渲染优化**：采用 Next.js App Router 架构，提供更好的性能和 SEO 支持
+- **高级搜索选项**：支持按文档类别、时间范围和相关度排序等高级筛选
+- **分页与排序功能**：智能分页算法和多种排序方式，优化大量结果的浏览体验
+- **移动端友好设计**：完全适配移动设备，提供流畅的移动搜索体验
 
 ## 🔧 技术栈
 
-- **前端**：React 19, Next.js 15 (App Router), Tailwind CSS 4
-- **后端**：Next.js API Routes
-- **搜索引擎**：Meilisearch
-- **爬虫工具**：Axios, Cheerio
-- **开发语言**：TypeScript
+### 前端
+- **框架**: React 19, Next.js 15 (App Router)
+- **UI组件**: Shadcn UI, Radix UI
+- **样式**: Tailwind CSS 4
+- **状态管理**: React Hooks + Context API
+- **类型系统**: TypeScript 5.4.5
+
+### 后端
+- **API服务**: Next.js API Routes
+- **搜索引擎**: Meilisearch 0.50.0
+- **爬虫工具**: Axios, Cheerio
+- **数据处理**: Node.js Streams
+
+### 开发与部署
+- **开发语言**: TypeScript
+- **构建工具**: Turbopack
+- **部署环境**: Vercel / Docker
 
 ## 🚀 快速开始
 
@@ -36,7 +52,7 @@ ApolloDatabase 是一个专为百度 Apollo（自动驾驶开放平台）官方�
 
 - Node.js (v18.0.0+)
 - Yarn 包管理器
-- Docker (用于运行 Meilisearch，可选)
+- Docker (用于运行 Meilisearch)
 
 ### 安装步骤
 
@@ -58,7 +74,7 @@ yarn install
 复制示例环境配置文件并根据需要修改：
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env.development
 ```
 
 4. **启动 Meilisearch**
@@ -80,6 +96,8 @@ yarn spider:new
 ```bash
 yarn dev
 ```
+
+现在，你可以在浏览器中访问 `http://localhost:3000` 查看应用。
 
 7. **构建生产版本**
 
@@ -105,12 +123,43 @@ yarn spider:update
 0 2 * * * cd /path/to/ApolloDatabase && yarn spider:update
 ```
 
+## 💡 项目结构
+
+```
+ApolloDatabase/
+├── src/                  # 源代码目录
+│   ├── app/              # Next.js App Router 页面
+│   │   └── search/       # 搜索相关组件
+│   ├── components/       # React 组件
+│   │   └── search/       # 搜索相关组件
+│   ├── lib/              # 核心库和工具函数
+│   ├── services/         # 服务层，处理业务逻辑
+│   ├── spider/           # 爬虫相关代码
+│   └── utils/            # 通用工具函数
+├── data/                 # 存储爬取的数据
+│   └── apollo-docs/      # Apollo文档数据
+├── .env.development      # 开发环境配置
+├── .env.production       # 生产环境配置
+└── next.config.ts        # Next.js 配置
+```
+
 ## 🔍 使用说明
 
 1. 访问首页，在搜索框中输入关键词
 2. 点击搜索按钮或按 Enter 键开始搜索
 3. 浏览搜索结果，点击文章标题查看完整内容
-4. 使用分页控件浏览更多结果
+4. 使用筛选选项优化搜索结果
+5. 使用分页控件浏览更多结果
+
+## 🛠 配置选项
+
+主要配置选项位于环境文件中（`.env.development` 或 `.env.production`）：
+
+- `MEILISEARCH_HOST`: Meilisearch 服务器地址
+- `MEILISEARCH_API_KEY`: Meilisearch API 密钥
+- `APOLLO_BASE_URL`: Apollo 官网基础URL
+- `CRAWL_INTERVAL`: 爬虫运行间隔（毫秒）
+- `MAX_CONCURRENT_REQUESTS`: 最大并发请求数
 
 ## 📄 许可证
 
@@ -126,6 +175,15 @@ Steven Moder - java20131114@gmail.com
 - [Meilisearch](https://www.meilisearch.com/) - 提供出色的搜索引擎技术
 - [Next.js](https://nextjs.org/) - 提供强大的 React 框架
 - [Tailwind CSS](https://tailwindcss.com/) - 提供优秀的 CSS 框架
+- [Shadcn UI](https://ui.shadcn.com/) - 提供高质量的UI组件库
+
+## 📊 路线图
+
+- [ ] 添加用户认证系统
+- [ ] 实现个性化搜索偏好保存
+- [ ] 支持文档评论和标注
+- [ ] 添加更多数据源支持
+- [ ] 实现文档内容差异对比功能
 
 ---
 
