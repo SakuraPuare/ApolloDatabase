@@ -142,3 +142,6 @@ yarn.lock
 .env.production
 .env.development
 .env.test
+
+data/apollo-cookies.json
+data/apollo-docs
