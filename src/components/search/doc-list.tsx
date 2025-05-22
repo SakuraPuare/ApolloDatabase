@@ -17,7 +17,7 @@ export default function DocList({ docs, query }: DocListProps) {
   }
 
   console.log("docs", docs);
-  
+
   return (
     <div className="space-y-6">
       {docs.map((doc) => (
@@ -30,7 +30,6 @@ export default function DocList({ docs, query }: DocListProps) {
               <HighlightText text={doc.title} query={query} />
             </h2>
           </Link>
-
 
           <p className="text-gray-700">
             <HighlightText

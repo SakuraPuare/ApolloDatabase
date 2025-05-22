@@ -24,7 +24,9 @@ interface PaginationWithInternalNavigationProps extends PaginationBaseProps {
 }
 
 // 使用联合类型定义 PaginationProps
-type PaginationProps = PaginationWithCallbackProps | PaginationWithInternalNavigationProps;
+type PaginationProps =
+  | PaginationWithCallbackProps
+  | PaginationWithInternalNavigationProps;
 
 export default function Pagination(props: PaginationProps) {
   const { currentPage, totalPages } = props;
@@ -35,7 +37,10 @@ export default function Pagination(props: PaginationProps) {
     if (props.onPageChange) {
       // 回调模式
       props.onPageChange(page);
-    } else if (typeof props.query === 'string' && typeof props.searchType === 'string') {
+    } else if (
+      typeof props.query === "string" &&
+      typeof props.searchType === "string"
+    ) {
       // 内部导航模式
       // 在此模式下，router 实例是必需的
       // TypeScript 能够通过这里的 props.query 和 props.searchType 推断出 props 是 PaginationWithInternalNavigationProps 类型
@@ -147,9 +152,7 @@ export default function Pagination(props: PaginationProps) {
         )}
 
         <button
-          onClick={() =>
-            handlePageClick(Math.min(totalPages, currentPage + 1))
-          }
+          onClick={() => handlePageClick(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="下一页"

@@ -19,13 +19,7 @@ interface SearchOptions {
 // 文档索引配置
 const DOC_INDEX_CONFIG: IndexConfig = {
   primaryKey: "id",
-  filterableAttributes: [
-    "id",
-    "url",
-    "title",
-    "content",
-    "crawledAt",
-  ],
+  filterableAttributes: ["id", "url", "title", "content", "crawledAt"],
   sortableAttributes: ["crawledAt"],
 };
 
@@ -59,13 +53,7 @@ export async function searchDocs(
   const searchOptions: SearchOptions = {
     offset,
     limit,
-    attributesToRetrieve: [
-      "id",
-      "title",
-      "content",
-      "url",
-      "crawledAt",
-    ],
+    attributesToRetrieve: ["id", "title", "content", "url", "crawledAt"],
   };
 
   try {
