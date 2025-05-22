@@ -513,10 +513,34 @@ async function startCrawler() {
   let browser: Browser | null = null;
   try {
     console.log("初始化 Puppeteer...");
-    browser = await puppeteer.launch({
-      headless: true,
-    });
-    console.log("Puppeteer 初始化成功");
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+      });
+      console.log("Puppeteer (标准模式) 初始化成功");
+    } catch (error) {
+      console.warn("标准模式 Puppeteer 初始化失败，尝试使用 no-sandbox 模式...", error);
+      try {
+        browser = await puppeteer.launch({
+          headless: true,
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
+        console.log("Puppeteer (no-sandbox 模式) 初始化成功");
+      } catch (sandboxError) {
+        console.error("Puppeteer 使用 no-sandbox 模式也初始化失败：", sandboxError);
+        // 如果两种方式都失败，则抛出错误或进行其他错误处理
+        // 例如，可以直接退出脚本，因为没有浏览器实例无法继续
+        throw sandboxError; // 或者 return; 如果不希望整个脚本崩溃
+      }
+    }
+
+    // 确保浏览器已成功初始化
+    if (!browser) {
+      console.error("无法初始化 Puppeteer 浏览器实例，爬虫无法启动。");
+      return;
+    }
+
+    console.log("Puppeteer 初始化检查完成");
 
     await initializeUrlIndex();
     const cookies = await getCookies();
@@ -722,3 +746,4 @@ async function startCrawler() {
 
 // 执行爬虫
 startCrawler();
+
