@@ -9,6 +9,7 @@ export interface ArticleDocument {
   author: string;
   views: number;
   likes: number;
+  [key: string]: unknown; // 添加索引签名
 }
 
 // 新增/更新的文章处理结果状态枚举
@@ -23,4 +24,14 @@ export enum ProcessArticleResultStatus {
 export interface ProcessArticleResult {
   status: ProcessArticleResultStatus;
   article?: ArticleDocument | null; // 仅在 Success 状态下包含文章数据
+}
+
+// --- 定义爬取页面的 MeiliSearch 文档接口 ---
+export interface CrawledPageDocument {
+  id: string; // URL 的 MD5 哈希值
+  url: string;
+  title: string;
+  content: string; // 页面原始内容 (HTML)
+  crawledAt: string; // ISO 格式的爬取时间字符串
+  [key: string]: unknown; // 添加索引签名
 }

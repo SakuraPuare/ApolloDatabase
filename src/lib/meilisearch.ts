@@ -1,100 +1,162 @@
-import { MeiliSearch } from "meilisearch";
 import {
-  ArticleDocument,
-} from "@/lib/types";
+  MeiliSearch,
+  Index as MeiliIndex,
+  DocumentOptions,
+  MeiliSearchApiError,
+  ErrorStatusCode,
+} from "meilisearch";
+// ArticleDocument import might become unused and can be removed if so.
+// If it's still used by other unshown parts of the file, keep it.
+// For now, assuming it's only for the changed parts:
+// import {
+//   ArticleDocument,
+// } from "@/lib/types";
 
 const MEILI_HOST = process.env.MEILI_HOST || "http://localhost:7700";
 const MEILI_API_KEY = process.env.MEILI_API_KEY || ""; // 如果有 API 密钥，可以从环境变量加载
-export const INDEX_NAME = "apollo_articles";
-
-// MeiliSearch 搜索选项类型
-interface SearchOptions {
-  offset?: number;
-  limit?: number;
-  attributesToRetrieve?: string[];
-  sort?: string[];
-  filter?: string;
-}
 
 // 创建 MeiliSearch 客户端
-const meiliClient = new MeiliSearch({
+// 将 meiliClient 导出，以便在 services/meili.ts 中可能需要（例如，如果需要直接访问 tasks API）
+// 但目前 services/meili.ts 中的函数并不直接需要它，因为 getOrCreateIndex 已经处理了任务等待
+export const meiliClient = new MeiliSearch({
   host: MEILI_HOST,
-  apiKey: MEILI_API_KEY, // 如果有，取消注释
+  apiKey: MEILI_API_KEY,
 });
-
-// MeiliSearch 错误类型 - 内部使用，无需导出
-interface MeiliSearchError {
-  message: string;
-  code?: string;
-}
 
 /**
  * 获取或创建 MeiliSearch 索引并配置属性
  * @param indexName 索引名称
+ * @template T 文档类型
  */
-export async function getOrCreateIndex(indexName: string) {
+export async function getOrCreateIndex<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(indexName: string): Promise<MeiliIndex<T>> {
   try {
-    const index = meiliClient.index<ArticleDocument>(indexName);
-    // 尝试获取索引信息，如果存在则不会抛出 index_not_found
-    await index.getRawInfo();
+    const index = meiliClient.index<T>(indexName);
+    await index.getRawInfo(); // Checks if index exists
     // console.log(`已连接到 MeiliSearch 索引：${indexName}`);
 
-    // 确保配置属性（无论是否新建）
-    await index.updateFilterableAttributes(["author", "views", "likes"]);
-    await index.updateSortableAttributes(["publishTimestamp"]);
+    // 通用配置，适用于项目中可能用到的所有索引的常见字段
+    // 如果特定索引有非常独特的配置需求，可以在获取索引后单独配置
+    await index.updateFilterableAttributes([
+      "author",
+      "views",
+      "likes",
+      "status",
+      "crawledAt",
+      "publishTimestamp", // 添加 publishTimestamp，因为 article.ts 中用于排序和可能用于过滤
+      "id", // id 通常是主键，也可能需要过滤
+      "url", // url 可能需要过滤
+      "title", // title 可能需要过滤
+    ]);
+    await index.updateSortableAttributes([
+      "publishTimestamp",
+      "views",
+      "likes",
+      "crawledAt",
+    ]);
 
     return index;
   } catch (error: unknown) {
-    const err = error as MeiliSearchError;
-    if (
-      err.code === "index_not_found" ||
-      (err.message && err.message.includes(`Index \`${indexName}\` not found`))
+    let createNeeded = false;
+
+    if (error instanceof MeiliSearchApiError) {
+      // Access properties via error.cause and error.response
+      const cause = error.cause;
+      const httpStatus = error.response?.status;
+
+      if (cause?.code === ErrorStatusCode.INDEX_NOT_FOUND) {
+        createNeeded = true;
+      } else {
+        console.error(
+          `MeiliSearch API Error for index ${indexName}: ${error.message} (Code: ${cause?.code || "N/A"}, HTTPStatus: ${httpStatus || "N/A"}, Type: ${cause?.type || "N/A"})`,
+        );
+        throw error;
+      }
+    } else if (
+      error instanceof Error &&
+      error.message.includes(`Index \`${indexName}\` not found`)
     ) {
+      // Fallback for other error types where the message indicates the index is not found
+      createNeeded = true;
+    } else {
+      // For other types of errors, or if the message doesn't match.
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `连接或处理 MeiliSearch 索引 ${indexName} 时遇到未预期错误：${errorMessage}`,
+      );
+      throw error;
+    }
+
+    if (createNeeded) {
       console.log(`索引 ${indexName} 不存在，正在创建...`);
       try {
         const taskResponse = await meiliClient.createIndex(indexName, {
-          primaryKey: "id",
+          primaryKey: "id", // 假设所有相关索引的主键都是 'id'
         });
         console.log(
           `创建索引任务已提交，Task UID: ${taskResponse.taskUid}. 等待创建完成...`,
         );
+        // Linter suggested 'timeout' instead of 'timeoutMs'
         await meiliClient.tasks.waitForTask(taskResponse.taskUid, {
           timeout: 60000,
           interval: 100,
         });
-        const index = meiliClient.index<ArticleDocument>(indexName);
+        const newIndex = meiliClient.index<T>(indexName);
         console.log(`索引 ${indexName} 创建成功。`);
 
-        // 配置新创建的索引
-        await index.updateFilterableAttributes(["author", "views", "likes"]);
-        await index.updateSortableAttributes(["publishTimestamp"]);
+        // 创建后再次应用配置
+        await newIndex.updateFilterableAttributes([
+          "author",
+          "views",
+          "likes",
+          "status",
+          "crawledAt",
+          "publishTimestamp",
+          "id",
+          "url",
+          "title",
+        ]);
+        await newIndex.updateSortableAttributes([
+          "publishTimestamp",
+          "views",
+          "likes",
+          "crawledAt",
+        ]);
 
-        return index;
+        return newIndex;
       } catch (creationError: unknown) {
-        const creationErr = creationError as MeiliSearchError;
+        const creationErrorMessage =
+          creationError instanceof Error
+            ? creationError.message
+            : String(creationError);
         console.error(
           `创建 MeiliSearch 索引 ${indexName} 时出错:`,
-          creationErr.message,
+          creationErrorMessage,
         );
-        throw creationError; // 抛出错误以便调用者处理
+        throw creationError;
       }
-    } else {
-      console.error(
-        `连接或处理 MeiliSearch 索引 ${indexName} 时遇到未预期错误:`,
-        err.message,
-      );
-      throw error; // 抛出错误
     }
+    // This part should not be reached if createNeeded is false and an error was already thrown.
+    // If createNeeded is true, it returns from the try block or throws from catch.
+    // To satisfy TypeScript, ensure all paths return a Promise<MeiliIndex<T>> or throw.
+    // The logic above should handle this, but as a fallback for an unexpected state:
+    throw new Error(
+      `Unhandled state in getOrCreateIndex for index ${indexName}`,
+    );
   }
 }
 
-export async function addDocumentsWithRetry(
-  documents: ArticleDocument[], // 直接接收文档数组
+export async function addDocumentsWithRetry<T extends Record<string, unknown>>(
+  indexName: string,
+  documents: T[],
   batchSize = 1000,
   retries = 3,
+  // primaryKey?: string, // primaryKey is now set during getOrCreateIndex
 ) {
-  // 确保索引存在并获取 index 对象
-  const index = await getOrCreateIndex(INDEX_NAME);
+  // getOrCreateIndex 现在会返回一个正确类型的索引实例
+  const index = await getOrCreateIndex<T>(indexName);
 
   for (let i = 0; i < documents.length; i += batchSize) {
     const batch = documents.slice(i, i + batchSize);
@@ -104,20 +166,24 @@ export async function addDocumentsWithRetry(
         console.log(
           `Attempt ${attempt + 1}: Adding batch ${
             i / batchSize + 1
-          } to index "${INDEX_NAME}"...`,
+          } to index "${indexName}"...`,
         );
-        const taskResponse = await index.addDocuments(batch);
+        // index.addDocuments 现在应该能正确处理 T[] 类型的批次
+        const taskResponse = await index.addDocuments(batch, {
+          primaryKey: "id",
+        } as DocumentOptions); // Explicitly pass primaryKey if needed by specific Meilisearch versions or configurations
         console.log(
           `Task ${taskResponse.taskUid} created for batch ${
             i / batchSize + 1
           }. Waiting for completion...`,
         );
+        // Linter suggested 'timeout' instead of 'timeoutMs'
         await meiliClient.tasks.waitForTask(taskResponse.taskUid, {
           timeout: 60000,
           interval: 100,
         });
         console.log(`Batch ${i / batchSize + 1} added successfully.`);
-        break; // Success, exit retry loop
+        break;
       } catch (error) {
         attempt++;
         console.error(
@@ -130,89 +196,13 @@ export async function addDocumentsWithRetry(
               i / batchSize + 1
             } after ${retries} attempts.`,
           );
-          // Optionally re-throw the error or handle it differently
           throw error;
         }
-        // Wait before retrying (e.g., exponential backoff)
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)),
         );
       }
     }
   }
-  console.log(`All documents added to index "${INDEX_NAME}".`);
-}
-
-/**
- * 搜索文章
- * @param query 搜索关键词
- * @param page 页码（从 1 开始）
- * @param limit 每页结果数
- * @returns 搜索结果和总命中数
- */
-export async function searchArticles(
-  query: string,
-  page: number = 1,
-  limit: number = 10,
-) {
-  const index = await getOrCreateIndex(INDEX_NAME);
-  const offset = (page - 1) * limit;
-
-  // 构建搜索选项
-  const searchOptions: SearchOptions = {
-    offset,
-    limit,
-    attributesToRetrieve: [
-      "id",
-      "title",
-      "content",
-      "url",
-      "publishTimestamp",
-      "publishDateStr",
-      "author",
-      "views",
-      "likes",
-    ],
-    sort: ["publishTimestamp:desc"],
-  };
-
-  try {
-    // 执行搜索
-    const searchResults = await index.search(query, searchOptions);
-    console.log(query);
-    console.log(searchResults);
-
-    return {
-      hits: searchResults.hits as ArticleDocument[],
-      totalHits: searchResults.estimatedTotalHits || 0,
-    };
-  } catch (error) {
-    console.error("Meilisearch 搜索错误：", error);
-    throw new Error("搜索时出错，请稍后再试");
-  }
-}
-
-/**
- * 获取最新文章
- * @param limit 获取数量
- * @returns 最新文章列表
- */
-export async function getLatestArticles(limit: number = 10) {
-  return searchArticles("", 1, limit);
-}
-
-/**
- * 按 ID 获取单篇文章
- * @param id 文章 ID
- * @returns 文章对象或 null
- */
-export async function getArticleById(id: number) {
-  try {
-    const index = await getOrCreateIndex(INDEX_NAME);
-    const article = await index.getDocument(id.toString());
-    return article as ArticleDocument;
-  } catch (error) {
-    console.error(`获取文章 ID ${id} 失败:`, error);
-    return null;
-  }
+  console.log(`All documents added to index "${indexName}".`);
 }

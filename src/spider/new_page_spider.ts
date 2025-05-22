@@ -1,23 +1,16 @@
 #!/usr/bin/env node
 
-import { Index } from "meilisearch"; // 只导入 Index
+import { Index as MeiliIndex } from "meilisearch"; // 只导入 Index
 import {
   sleep,
   DELAY_MIN_MS,
   processArticleId, // 导入 processArticleId
 } from "../utils/shared_utils";
 
-import {
-  ArticleDocument,
-  ProcessArticleResultStatus,
-} from "@/lib/types";
+import { ArticleDocument, ProcessArticleResultStatus } from "@/lib/types";
 
 // 从 lib/meilisearch 导入 MeiliSearch 相关的常量和函数
-import {
-  INDEX_NAME,
-  addDocumentsWithRetry,
-  getOrCreateIndex,
-} from "../lib/meilisearch";
+import { addDocumentsWithRetry, getOrCreateIndex } from "../lib/meilisearch";
 
 // --- 配置参数 ---
 const DEFAULT_START_ID = 1000; // 默认开始 ID（如果索引为空）
@@ -25,10 +18,11 @@ const MAX_ID = 3000; // 尝试到的最大 ID（需要根据观察调整）
 const CONSECUTIVE_FAILURE_LIMIT = 50; // 连续多少个失败后停止
 const CONCURRENCY = 20; // 并行爬取的数量
 const BATCH_SIZE = 20; // 批量处理的 ID 数量
+const INDEX_NAME = "apollo_articles";
 
 // 获取当前索引中的最大 ID
 async function getMaxExistingId(
-  index: Index<ArticleDocument>,
+  index: MeiliIndex<ArticleDocument>,
 ): Promise<number> {
   try {
     const docs = await index.search("", {
@@ -51,13 +45,16 @@ async function getMaxExistingId(
 
 // 主函数
 async function main() {
-  let index: Index<ArticleDocument>;
+  let index: MeiliIndex<ArticleDocument>;
   try {
-    // 使用从 meilisearch.ts 导入的 getOrCreateIndex
-    index = await getOrCreateIndex(INDEX_NAME);
+    // 使用从 meilisearch.ts 导入的 getOrCreateIndex，并指定泛型类型
+    index = await getOrCreateIndex<ArticleDocument>(INDEX_NAME);
 
     // 获取当前最大 ID
-    const maxExistingId = Math.max(await getMaxExistingId(index), DEFAULT_START_ID);
+    const maxExistingId = Math.max(
+      await getMaxExistingId(index),
+      DEFAULT_START_ID,
+    );
     const startId = maxExistingId + 1;
 
     let consecutiveFailures = 0;
@@ -157,8 +154,8 @@ async function main() {
       if (articles.length > 0) {
         try {
           console.log(`批量添加 ${articles.length} 篇文章到 MeiliSearch...`);
-          // 调用从 meilisearch.ts 导入的 addDocumentsWithRetry，不再需要传入 indexUid
-          await addDocumentsWithRetry(articles);
+          // articles 已经是 ArticleDocument[] 类型，无需断言
+          await addDocumentsWithRetry(INDEX_NAME, articles);
           newArticlesCount += articles.length;
           console.log(`成功添加 ${articles.length} 篇文章到索引。`);
         } catch (error) {

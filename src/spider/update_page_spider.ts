@@ -1,35 +1,29 @@
 #!/usr/bin/env node
 
-import { Index } from "meilisearch";
+import { Index as MeiliIndex } from "meilisearch";
 
 // 从 shared_utils 导入通用的 utils 函数
 import { sleep, DELAY_MIN_MS, processArticleId } from "../utils/shared_utils";
 
 // 从 lib/meilisearch 导入 MeiliSearch 相关的常量和函数
-import {
-  INDEX_NAME,
-  getOrCreateIndex,
-  addDocumentsWithRetry,
-} from "../lib/meilisearch";
+import { getOrCreateIndex, addDocumentsWithRetry } from "../lib/meilisearch";
 
 // 从 lib/types 导入类型和枚举
-import {
-  ArticleDocument,
-  ProcessArticleResultStatus,
-} from "@/lib/types";
+import { ArticleDocument, ProcessArticleResultStatus } from "@/lib/types";
 
 // --- 配置参数 ---
 const MAX_DOCUMENTS_PER_FETCH = 1000; // 一次从 MeiliSearch 获取多少文档 ID
 const MAX_TOTAL_DOCUMENTS_TO_UPDATE = 100000; // 防止无限循环或获取过多文档
 const CONCURRENCY = 20; // 并行爬取的数量
 const BATCH_SIZE = 100; // 批量处理的 ID 数量
+const INDEX_NAME = "apollo_articles";
 
 // 主函数
 async function main() {
-  let index: Index<ArticleDocument>;
+  let index: MeiliIndex<ArticleDocument>;
   try {
-    // 使用从 meilisearch.ts 导入的 getOrCreateIndex
-    index = await getOrCreateIndex(INDEX_NAME);
+    // 使用从 meilisearch.ts 导入的 getOrCreateIndex，并指定泛型类型
+    index = await getOrCreateIndex<ArticleDocument>(INDEX_NAME);
   } catch {
     console.error("初始化 MeiliSearch 索引失败，脚本将退出。");
     return;
@@ -161,7 +155,7 @@ async function main() {
         console.log(
           `批量更新 ${updatedArticles.length} 篇文章到 MeiliSearch...`,
         );
-        await addDocumentsWithRetry(updatedArticles);
+        await addDocumentsWithRetry(INDEX_NAME, updatedArticles);
         updatedCount += updatedArticles.length;
         console.log(`成功更新 ${updatedArticles.length} 篇文章到索引。`);
       } catch (error) {

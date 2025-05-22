@@ -1,8 +1,8 @@
 import "./index.css";
 import Link from "next/link";
 import React from "react";
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import { SiGithub } from "react-icons/si";
 
 export default function RootLayout({

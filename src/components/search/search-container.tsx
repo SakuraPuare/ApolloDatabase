@@ -6,7 +6,7 @@ import { ArticleDocument } from "@/utils/shared_types";
 import SearchForm from "./search-form";
 import SearchResults from "./search-results";
 import Pagination from "./pagination";
-import { searchArticles } from "@/lib/meilisearch";
+import { searchArticles } from "@/services/article";
 
 export interface SearchState {
   query: string;

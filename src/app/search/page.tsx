@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import { searchArticles } from "@/lib/meilisearch";
+import { searchArticles } from "@/services/article";
 import SearchFormClient from "@/components/search/search-form-client";
 import HighlightText from "@/components/search/highlight-text";
 import { ArticleDocument } from "@/utils/shared_types";
