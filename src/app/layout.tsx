@@ -1,10 +1,13 @@
 import "./index.css";
 import Link from "next/link";
 import React from "react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { SiGithub } from "react-icons/si";
-import packageJson from "@/../package.json";
+
+export const metadata = {
+  title: "Apollo 数据库 | 百度 Apollo 官网内容搜索",
+  description:
+    "搜索并发现百度 Apollo 官网的文章内容，快速获取 Apollo 自动驾驶平台的资讯",
+};
 
 export default function RootLayout({
   children,
@@ -43,11 +46,11 @@ export default function RootLayout({
         <footer className="border-t border-gray-200 mt-8">
           <div className="container mx-auto py-6 px-4 text-center text-gray-500">
             <p>Apollo 数据库 - 百度 Apollo 官网文章搜索</p>
-            <p> v{packageJson.version} </p>
+            <p className="text-sm mt-1">
+              Powered by Orama · Deployed on Cloudflare Pages
+            </p>
           </div>
         </footer>
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   );
