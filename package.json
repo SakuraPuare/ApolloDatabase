@@ -23,7 +23,7 @@
     "eslint-config-next": "15.5.22",
     "tsx": "^4.19.3",
     "tw-animate-css": "^1.2.8",
-    "typescript": "^5.4.5"
+    "typescript": "^7.0.0"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.4",
