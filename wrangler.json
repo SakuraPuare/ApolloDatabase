@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler",
+  "name": "apollo-database",
+  "pages_build_output_dir": "out",
+  "compatibility_date": "2025-04-01"
+}

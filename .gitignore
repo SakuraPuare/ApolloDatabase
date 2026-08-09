@@ -145,3 +145,6 @@ yarn.lock
 
 data/apollo-cookies.json
 data/apollo-docs
+
+# Build-generated search index
+public/search-index/
