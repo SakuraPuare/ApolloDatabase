@@ -1,12 +1,10 @@
 import "./index.css";
-import Link from "next/link";
 import React from "react";
-import { SiGithub } from "react-icons/si";
 
 export const metadata = {
-  title: "Apollo 数据库 | 百度 Apollo 官网内容搜索",
+  title: "Apollo 数据库 | 百度 Apollo 自动驾驶文档搜索",
   description:
-    "搜索并发现百度 Apollo 官网的文章内容，快速获取 Apollo 自动驾驶平台的资讯",
+    "搜索百度 Apollo 官网的文章内容，获取自动驾驶技术的最新资讯。边缘部署，即时搜索。",
 };
 
 export default function RootLayout({
@@ -15,42 +13,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN">
-      <body>
-        <header className="border-b border-gray-200">
-          <div className="container mx-auto py-4 px-4">
-            <nav className="flex items-center justify-between">
-              <Link href="/" className="text-xl font-bold">
-                Apollo 数据库
-              </Link>
-              <div className="flex gap-4 items-center">
-                <Link
-                  href="/search"
-                  className="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors"
-                >
-                  搜索
-                </Link>
-                <Link
-                  href="https://github.com/SakuraPuare/ApolloDatabase"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center"
-                >
-                  <SiGithub className="w-6 h-6" />
-                </Link>
-              </div>
-            </nav>
-          </div>
-        </header>
-        <main>{children}</main>
-        <footer className="border-t border-gray-200 mt-8">
-          <div className="container mx-auto py-6 px-4 text-center text-gray-500">
-            <p>Apollo 数据库 - 百度 Apollo 官网文章搜索</p>
-            <p className="text-sm mt-1">
-              Powered by Orama · Deployed on Cloudflare Pages
-            </p>
-          </div>
-        </footer>
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(t==='dark'||((!t)&&window.matchMedia('(prefers-color-scheme:dark)').matches)){d.classList.add('dark')}else{d.classList.remove('dark')}}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        {children}
       </body>
     </html>
   );

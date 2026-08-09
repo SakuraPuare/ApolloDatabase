@@ -35,10 +35,13 @@ async function ensureDB(): Promise<void> {
   return dbPromise;
 }
 
+export type SortMode = "relevance" | "time" | "views";
+
 export async function searchArticles(
   query: string,
-  page: number = 1,
-  limit: number = 10
+  _page: number = 1,
+  _limit: number = 10,
+  sort: SortMode = "relevance"
 ): Promise<SearchResult> {
   await ensureDB();
 
@@ -49,21 +52,23 @@ export async function searchArticles(
     ...(query ? { properties: ["title", "content", "author"] } : {}),
   });
 
-  let hits = results.hits;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let hits: any[] = results.hits;
 
-  if (!query.trim()) {
+  if (sort === "time" || (!query.trim() && sort === "relevance")) {
     hits = [...hits].sort(
-      (a: any, b: any) =>
+      (a, b) =>
         (b.document.publishTimestamp || 0) -
         (a.document.publishTimestamp || 0)
     );
+  } else if (sort === "views") {
+    hits = [...hits].sort(
+      (a, b) => (b.document.views || 0) - (a.document.views || 0)
+    );
   }
 
-  const offset = (page - 1) * limit;
-  const paged = hits.slice(offset, offset + limit);
-
   return {
-    hits: paged.map((h: any) => h.document as ArticleDocument),
+    hits: hits.map((h: any) => h.document as ArticleDocument),
     totalHits: results.count,
   };
 }
