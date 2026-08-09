@@ -12,8 +12,8 @@ const OUTPUT_DIR = join(__dirname, "../public/search-index");
 const CACHE_FILE = join(__dirname, "../data/articles-cache.json");
 
 const CONCURRENCY = 15;
-const MAX_ID = 3000;
-const CONSECUTIVE_FAILURE_LIMIT = 200;
+const MAX_ID = 5000;
+const CONSECUTIVE_FAILURE_LIMIT = 50;
 
 interface RawArticle {
   id: number;
@@ -89,7 +89,6 @@ async function fetchArticle(id: number): Promise<RawArticle | null> {
 }
 
 async function crawlAll(): Promise<RawArticle[]> {
-  // Load existing cache if available
   let articles: Map<number, RawArticle> = new Map();
   if (existsSync(CACHE_FILE)) {
     const cached: RawArticle[] = JSON.parse(readFileSync(CACHE_FILE, "utf-8"));
@@ -97,37 +96,73 @@ async function crawlAll(): Promise<RawArticle[]> {
     console.log(`Loaded ${articles.size} cached articles`);
   }
 
-  // Crawl from id 1 to MAX_ID
-  let consecutiveFailures = 0;
-  let id = 1;
+  const hasCache = articles.size > 0;
 
-  while (id <= MAX_ID) {
-    // Process batch concurrently
-    const batch: number[] = [];
-    for (let i = 0; i < CONCURRENCY && id <= MAX_ID; i++, id++) {
-      batch.push(id);
-    }
+  if (hasCache) {
+    // Incremental: scan from max existing ID upward
+    const maxId = Math.max(...articles.keys());
+    console.log(`Incremental mode: scanning from #${maxId + 1}`);
+    let consecutiveFailures = 0;
+    let id = maxId + 1;
 
-    const results = await Promise.all(
-      batch.map(async (articleId) => {
-        try {
-          const article = await fetchArticle(articleId);
-          return { id: articleId, article };
-        } catch {
-          return { id: articleId, article: null };
-        }
-      })
-    );
-
-    for (const { id: aid, article } of results) {
-      if (article) {
-        articles.set(aid, article);
-        process.stdout.write(`\r✓ ${articles.size} articles (latest: #${aid})`);
+    while (id <= MAX_ID && consecutiveFailures < CONSECUTIVE_FAILURE_LIMIT) {
+      const batch: number[] = [];
+      for (let i = 0; i < CONCURRENCY && id <= MAX_ID; i++, id++) {
+        batch.push(id);
       }
-    }
 
-    // Rate limiting
-    await sleep(500);
+      const results = await Promise.all(
+        batch.map(async (articleId) => {
+          try {
+            return { id: articleId, article: await fetchArticle(articleId) };
+          } catch {
+            return { id: articleId, article: null };
+          }
+        })
+      );
+
+      for (const { id: aid, article } of results) {
+        if (article) {
+          articles.set(aid, article);
+          consecutiveFailures = 0;
+          process.stdout.write(`\r✓ new #${aid} (total: ${articles.size})`);
+        } else {
+          consecutiveFailures++;
+        }
+      }
+
+      await sleep(300);
+    }
+  } else {
+    // Full scan: first time, no cache
+    console.log("Full scan mode: crawling all IDs 1-" + MAX_ID);
+    let id = 1;
+
+    while (id <= MAX_ID) {
+      const batch: number[] = [];
+      for (let i = 0; i < CONCURRENCY && id <= MAX_ID; i++, id++) {
+        batch.push(id);
+      }
+
+      const results = await Promise.all(
+        batch.map(async (articleId) => {
+          try {
+            return { id: articleId, article: await fetchArticle(articleId) };
+          } catch {
+            return { id: articleId, article: null };
+          }
+        })
+      );
+
+      for (const { id: aid, article } of results) {
+        if (article) {
+          articles.set(aid, article);
+          process.stdout.write(`\r✓ ${articles.size} articles (latest: #${aid})`);
+        }
+      }
+
+      await sleep(300);
+    }
   }
 
   console.log(`\nCrawl complete: ${articles.size} articles total`);
