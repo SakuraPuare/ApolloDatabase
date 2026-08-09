@@ -135,8 +135,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-yarn.lock
-
 .vscode/
 
 .env.production

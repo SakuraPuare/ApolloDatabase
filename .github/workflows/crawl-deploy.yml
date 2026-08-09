@@ -16,7 +16,7 @@ jobs:
           node-version: 20
           cache: yarn
 
-      - run: yarn install --frozen-lockfile
+      - run: yarn install
 
       - name: Crawl articles
         run: npx tsx scripts/crawl-and-build.ts
