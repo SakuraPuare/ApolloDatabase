@@ -55,7 +55,7 @@ export async function searchArticles(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let hits: any[] = results.hits;
 
-  if (sort === "time" || (!query.trim() && sort === "relevance")) {
+  if (sort === "time" || sort === "relevance") {
     hits = [...hits].sort(
       (a, b) =>
         (b.document.publishTimestamp || 0) -

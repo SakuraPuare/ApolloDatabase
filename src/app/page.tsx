@@ -298,8 +298,7 @@ function SearchApp() {
             </p>
             <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
               {[
-                { key: "relevance" as SortMode, icon: Search, label: "相关" },
-                { key: "time" as SortMode, icon: TrendingUp, label: "最新" },
+                { key: "relevance" as SortMode, icon: TrendingUp, label: "最新" },
                 { key: "views" as SortMode, icon: Flame, label: "热门" },
               ].map(({ key, icon: Icon, label }) => (
                 <button
