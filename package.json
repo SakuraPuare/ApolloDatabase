@@ -43,6 +43,6 @@
     "cheerio": "^1.0.0",
     "jsdom": "^26.1.0",
     "meilisearch": "^0.60.0",
-    "puppeteer": "^24.9.0"
+    "puppeteer": "^25.0.0"
   }
 }
