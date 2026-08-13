@@ -41,7 +41,7 @@
   "optionalDependencies": {
     "axios": "^1.9.0",
     "cheerio": "^1.0.0",
-    "jsdom": "^26.1.0",
+    "jsdom": "^30.0.0",
     "meilisearch": "^0.60.0",
     "puppeteer": "^24.9.0"
   }
