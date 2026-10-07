@@ -7,21 +7,21 @@
   resolved "https://registry.yarnpkg.com/@alloc/quick-lru/-/quick-lru-5.3.0.tgz#9073d52ad3cebbedd0d8c9f3e65aa5527fabd1e0"
   integrity sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==
 
-"@asamuzakjp/css-color@^7.0.0":
-  version "7.1.2"
-  resolved "https://registry.yarnpkg.com/@asamuzakjp/css-color/-/css-color-7.1.2.tgz#940f4936061633c33b78aa5703c7dfd6e0ae0b86"
-  integrity sha512-99DHAnXDB5z6EEK+9GMpVI7Mw4oxj97dY5bpOzMnjADQWxI8rN6TvTduuFLUhUMlS7/CfVZ06tcZsus6cltnNw==
+"@asamuzakjp/css-color@^7.1.3":
+  version "7.1.3"
+  resolved "https://registry.yarnpkg.com/@asamuzakjp/css-color/-/css-color-7.1.3.tgz#720bdbf76f28c359deb9cc4be07331b838777b1c"
+  integrity sha512-1t1U8Cm3RBl9vh3RAZhjkPaduzLSvQJRToRrxpGR/eDRW99mOREleuu+mWfiFa795bUzjwht7NgphCKTs2ianQ==
   dependencies:
-    "@csstools/css-calc" "^3.4.1"
-    "@csstools/css-color-parser" "^4.2.4"
-    "@csstools/css-parser-algorithms" "^4.0.1"
+    "@csstools/css-calc" "^3.4.2"
+    "@csstools/css-color-parser" "^4.2.5"
+    "@csstools/css-parser-algorithms" "^4.0.2"
     "@csstools/css-tokenizer" "^4.0.2"
     lru-cache "^11.5.3"
 
-"@asamuzakjp/dom-selector@^9.2.1":
-  version "9.2.2"
-  resolved "https://registry.yarnpkg.com/@asamuzakjp/dom-selector/-/dom-selector-9.2.2.tgz#0a21e22e0ca1646a667055db64d172b9b59fc989"
-  integrity sha512-lSWTBMjAcmu2xn5yEDU7jh6QDV+C8GEKtdJ4pIQhXh26RkKQ7S3FuQlt+zZkUbTdJ4d3XyV1kPI/G0zWXxqaqw==
+"@asamuzakjp/dom-selector@^9.2.4":
+  version "9.2.4"
+  resolved "https://registry.yarnpkg.com/@asamuzakjp/dom-selector/-/dom-selector-9.2.4.tgz#aa0bda9fb491fbbb7ed11ceb66a8044bb8f5e910"
+  integrity sha512-YnVzxDxLaqL0t7Q4wfcgHZjg55Wm6y5EaO7Bhu3q9J7wq/8iw3PhsnWiOQhYekx4VexnbkgWpTT6n+QIV7kczw==
   dependencies:
     bidi-js "^1.1.0"
     css-tree "^3.2.1"
@@ -29,11 +29,11 @@
     lru-cache "^11.5.3"
 
 "@bramus/specificity@^2.4.2":
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/@bramus/specificity/-/specificity-2.4.2.tgz#aa8db8eb173fdee7324f82284833106adeecc648"
-  integrity sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==
+  version "2.4.3"
+  resolved "https://registry.yarnpkg.com/@bramus/specificity/-/specificity-2.4.3.tgz#66586208e89e37327e509a94eef6545d76915db8"
+  integrity sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==
   dependencies:
-    css-tree "^3.0.0"
+    css-tree "^3.2.1"
 
 "@cacheable/memory@^2.2.0":
   version "2.2.0"
@@ -58,28 +58,28 @@
   resolved "https://registry.yarnpkg.com/@csstools/color-helpers/-/color-helpers-6.1.2.tgz#41d1c66d9e5885a750d6512c786b3c45d5de3034"
   integrity sha512-grhRy3OKmniaAEKXMjua5z/EODX0MSqBGjunw8+j/3HQjOnahs2AGhvEOIYVUWcU6ScApbhLhVrQTX8XqrMrow==
 
-"@csstools/css-calc@^3.4.1":
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/@csstools/css-calc/-/css-calc-3.4.1.tgz#ca6ef7df5146e1762b46e7d081d6eb3056874db0"
-  integrity sha512-EtC7SoN1j6J4E4DCwg5QgbO5TGxgxIA1RXqe+W+qUM+BUcezx9wT+/tiQ/WO2yCX4i5X+Cuf9ciJ22aP4UEwWw==
+"@csstools/css-calc@^3.4.2", "@csstools/css-calc@^3.4.3":
+  version "3.4.3"
+  resolved "https://registry.yarnpkg.com/@csstools/css-calc/-/css-calc-3.4.3.tgz#f3708018243c508ed9fca99835d3b03e9112cf95"
+  integrity sha512-iex20d8CHVkyvg6B7UKV7uHnI2Bqo9g+EFfT9E0y+GvTvhZ/DwONJ+9aKb1dlqm0ZiGsL5RXjp0fCoJYnkeDjA==
 
-"@csstools/css-color-parser@^4.2.4":
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/@csstools/css-color-parser/-/css-color-parser-4.2.4.tgz#ffc4ea34436f08d7bb4e0dd44bce5b694e29ce14"
-  integrity sha512-DyefytAZ735mX4Dq/WcDAXFtXhaEFvme0ZS9tVEBAc2whxUthXr0R0L2rmEPm59SrMBkGrFzQviBXMs/UtnABQ==
+"@csstools/css-color-parser@^4.2.5":
+  version "4.2.6"
+  resolved "https://registry.yarnpkg.com/@csstools/css-color-parser/-/css-color-parser-4.2.6.tgz#14dcf86f96d8f0708fec000b49fc39ab2e34f4b4"
+  integrity sha512-iiPQ3iRWwnJkeEn6RIu6SJPr7hYrLz6XZ9s/QZl+2/LI5KQVjpl2fdmDSZKuD4xP6GMmMPgHFFXg6k1Wkz0Trg==
   dependencies:
     "@csstools/color-helpers" "^6.1.2"
-    "@csstools/css-calc" "^3.4.1"
+    "@csstools/css-calc" "^3.4.3"
 
-"@csstools/css-parser-algorithms@^4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@csstools/css-parser-algorithms/-/css-parser-algorithms-4.0.1.tgz#0733e8bd28f0798d0512166bf8da7227826762fa"
-  integrity sha512-ShL8BqPfbKJrJiKFH0xBbN0i7Nrh9HXYRuF+pzyj93R/BL2YAsUxJeqANErzqM+0JGl7vjHp+3OIgd/DL69YIA==
+"@csstools/css-parser-algorithms@^4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@csstools/css-parser-algorithms/-/css-parser-algorithms-4.0.2.tgz#689445621dae9f2114db2bee2190d3b4513a2d3c"
+  integrity sha512-40cSKyMvK+tq4qz6Awrlye2WGuOKt3FwPgtGg6KTfbHOWNw+Rk1rzbAtZnZ6IBhsY491HLRnDXwoyBAijmmILA==
 
-"@csstools/css-syntax-patches-for-csstree@^1.1.13":
-  version "1.1.14"
-  resolved "https://registry.yarnpkg.com/@csstools/css-syntax-patches-for-csstree/-/css-syntax-patches-for-csstree-1.1.14.tgz#292b8ec20123881fba878d4b42e6feb13b1f4b5e"
-  integrity sha512-HpbVXyrofRXpHpgkNIjU/3EWR4WJvOkO3emNK/L6X/mTJU7bGUI3AkkpoTNXznQLp0KRjLHELTGeKI5dIkI9JQ==
+"@csstools/css-syntax-patches-for-csstree@^1.1.15":
+  version "1.1.15"
+  resolved "https://registry.yarnpkg.com/@csstools/css-syntax-patches-for-csstree/-/css-syntax-patches-for-csstree-1.1.15.tgz#2255da5042c77e6ba3faf1995188404b6fc22361"
+  integrity sha512-J0u7HkVl2nzSlhsiTOp4AmwcUQ3D+mGEEKfBy/7To5/y7F2OHwyLrXfrhR0SMgr4p5Lo+eaMVSeai24zUcBIxA==
 
 "@csstools/css-tokenizer@^4.0.2":
   version "4.0.2"
@@ -308,7 +308,7 @@
     "@eslint/core" "^1.2.1"
     levn "^0.4.1"
 
-"@exodus/bytes@^1.11.0", "@exodus/bytes@^1.15.1":
+"@exodus/bytes@^1.15.1", "@exodus/bytes@^1.16.0":
   version "1.16.0"
   resolved "https://registry.yarnpkg.com/@exodus/bytes/-/bytes-1.16.0.tgz#954c9d9dd7eec15b966b2e8f2d883c04295b720c"
   integrity sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA==
@@ -1483,7 +1483,7 @@ css-select@^5.1.0:
     domutils "^3.0.1"
     nth-check "^2.0.1"
 
-css-tree@^3.0.0, css-tree@^3.2.1:
+css-tree@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/css-tree/-/css-tree-3.2.1.tgz#86cac7011561272b30e6b1e042ba6ce047aa7518"
   integrity sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==
@@ -1506,13 +1506,13 @@ damerau-levenshtein@^1.0.8:
   resolved "https://registry.yarnpkg.com/damerau-levenshtein/-/damerau-levenshtein-1.0.8.tgz#b43d286ccbd36bc5b2f7ed41caf2d0aba1f8a6e7"
   integrity sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==
 
-data-urls@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/data-urls/-/data-urls-7.0.0.tgz#6dce8b63226a1ecfdd907ce18a8ccfb1eee506d3"
-  integrity sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==
+data-urls@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/data-urls/-/data-urls-8.0.0.tgz#d4e925beae8249dbe99a1defed36cebb9cc7a84c"
+  integrity sha512-JQUCCK+/CAGbGGx618PlFZMXH81Jtj7t73CHv9dd/zVWvxgGT2zLFRjnKb+Ng46GIwcy+f7f88qd4duqllK+WQ==
   dependencies:
     whatwg-mimetype "^5.0.0"
-    whatwg-url "^16.0.0"
+    whatwg-url "^17.1.2"
 
 data-view-buffer@^1.0.2:
   version "1.0.2"
@@ -2639,29 +2639,29 @@ jiti@^2.7.0:
   integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
 
 jsdom@^30.0.0:
-  version "30.1.1"
-  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-30.1.1.tgz#cf8b82ce71ac29a0bf1ab219a6d2894bce62dbdb"
-  integrity sha512-FahmoPK5vbPc+jxV1iErMHmAZypCZ942NHF4+qqaWAuvaKKTBZxawnmAtrbGWLU7MtlxfqIP0qw6aSI+aWGtLg==
+  version "30.1.2"
+  resolved "https://registry.yarnpkg.com/jsdom/-/jsdom-30.1.2.tgz#28ef0482cab9724692c9dffcec3a6a6ae8a8f91e"
+  integrity sha512-0FFE/jE1rppmVfUrJUgxqXjcwolZYIGtAgj1pTussMhNZxIxi7W/PvfWaMNroGi2B36X1IKHbexpZ9DhkoOPiQ==
   dependencies:
-    "@asamuzakjp/css-color" "^7.0.0"
-    "@asamuzakjp/dom-selector" "^9.2.1"
+    "@asamuzakjp/css-color" "^7.1.3"
+    "@asamuzakjp/dom-selector" "^9.2.4"
     "@bramus/specificity" "^2.4.2"
-    "@csstools/css-syntax-patches-for-csstree" "^1.1.13"
-    "@exodus/bytes" "^1.15.1"
+    "@csstools/css-syntax-patches-for-csstree" "^1.1.15"
+    "@exodus/bytes" "^1.16.0"
     css-tree "^3.2.1"
-    data-urls "^7.0.0"
+    data-urls "^8.0.0"
     decimal.js "^10.6.0"
     html-encoding-sniffer "^7.0.0"
     is-potential-custom-element-name "^1.0.1"
-    lru-cache "^11.5.2"
+    lru-cache "^11.5.3"
     parse5 "^8.0.1"
     saxes "^6.0.0"
     tough-cookie "^6.0.2"
-    undici "^8.10.2"
+    undici "^8.11.2"
     w3c-xmlserializer "^6.0.0"
     webidl-conversions "^8.0.1"
     whatwg-mimetype "^5.0.0"
-    whatwg-url "^17.1.1"
+    whatwg-url "^17.2.0"
     xml-name-validator "^5.0.0"
 
 json-schema-traverse@^0.4.1:
@@ -2811,7 +2811,7 @@ loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-lru-cache@^11.5.2, lru-cache@^11.5.3:
+lru-cache@^11.5.3:
   version "11.5.3"
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-11.5.3.tgz#a7767b4034e35269562d2b9da2b185b5df70c421"
   integrity sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==
@@ -3631,10 +3631,10 @@ tough-cookie@^6.0.2:
   dependencies:
     tldts "^7.0.5"
 
-tr46@^6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/tr46/-/tr46-6.0.0.tgz#f5a1ae546a0adb32a277a2278d0d17fa2f9093e6"
-  integrity sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw==
+tr46@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/tr46/-/tr46-7.0.0.tgz#af39140d4a8860868de4e16477a4a946bda03a62"
+  integrity sha512-BcDSDW+SIGWVOns1Zm6Yg91q9AEj7eaID0QDY9oIqJD1A8dscNwMcl9Sms2DeuWCNov1X0/oXanHGYQBSLwZsg==
   dependencies:
     punycode "^2.3.1"
 
@@ -3774,7 +3774,7 @@ undici@^7.19.0:
   resolved "https://registry.yarnpkg.com/undici/-/undici-7.30.0.tgz#64a947266eb7e21dbeac8b99f8720feef308bbe0"
   integrity sha512-dkrQXeHSaoamnItlYbmzG0wFYrM0ZwDxCIg0A7aKjTyyhh9svRzCNFEzV+Vm05/yehjCzjDZ31KXfGEjYSztDQ==
 
-undici@^8.10.2:
+undici@^8.11.2:
   version "8.11.2"
   resolved "https://registry.yarnpkg.com/undici/-/undici-8.11.2.tgz#b8f6f6504384ae535c8e46f8403fd8075f011d46"
   integrity sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==
@@ -3850,22 +3850,13 @@ whatwg-mimetype@^5.0.0:
   resolved "https://registry.yarnpkg.com/whatwg-mimetype/-/whatwg-mimetype-5.0.0.tgz#d8232895dbd527ceaee74efd4162008fb8a8cf48"
   integrity sha512-sXcNcHOC51uPGF0P/D4NVtrkjSU2fNsm9iog4ZvZJsL3rjoDAzXZhkm2MWt1y+PUdggKAYVoMAIYcs78wJ51Cw==
 
-whatwg-url@^16.0.0:
-  version "16.0.1"
-  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-16.0.1.tgz#047f7f4bd36ef76b7198c172d1b1cebc66f764dd"
-  integrity sha512-1to4zXBxmXHV3IiSSEInrreIlu02vUOvrhxJJH5vcxYTBDAx51cqZiKdyTxlecdKNSjj8EcxGBxNf6Vg+945gw==
+whatwg-url@^17.1.2, whatwg-url@^17.2.0:
+  version "17.2.0"
+  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-17.2.0.tgz#8f9c121df5006111de3a3541241d2dbaf1c544e9"
+  integrity sha512-IhLIHNcBrzIixC5XXsbr4DxdjajyA5vQ5RwGZMtrUp+GbtE5Nrsge9QKau7jXrC0aTXLYGV0xiW7Tb4YS2aomw==
   dependencies:
-    "@exodus/bytes" "^1.11.0"
-    tr46 "^6.0.0"
-    webidl-conversions "^8.0.1"
-
-whatwg-url@^17.1.1:
-  version "17.1.2"
-  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-17.1.2.tgz#6b16cae400ac045d5d672af39e78b1c28e424947"
-  integrity sha512-TEZA+Zqxin7Jjsm2cjRohCmen5awh+hT6Zi3VZdqZlNRk7zvOI/9WpBFg/DWlA56bWnzwm6DuB8NS0EsxQH9uQ==
-  dependencies:
-    "@exodus/bytes" "^1.15.1"
-    tr46 "^6.0.0"
+    "@exodus/bytes" "^1.16.0"
+    tr46 "^7.0.0"
     webidl-conversions "^8.0.1"
 
 which-boxed-primitive@^1.1.0, which-boxed-primitive@^1.1.1:
