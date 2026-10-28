@@ -16,7 +16,7 @@
     "spider:apollo": "tsx src/spider/apolloDocSpider.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "@types/react": "19.3.0",
     "eslint": "10",
     "eslint-config-next": "15.5.28",
