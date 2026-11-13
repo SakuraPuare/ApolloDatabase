@@ -47,7 +47,7 @@
   },
   "resolutions": {
     "postcss": "8.5.32",
-    "follow-redirects": "1.16.1",
+    "follow-redirects": "1.16.2",
     "cheerio/undici": "7.30.1"
   }
 }
