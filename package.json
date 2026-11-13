@@ -44,5 +44,10 @@
     "jsdom": "^30.0.0",
     "meilisearch": "^0.60.0",
     "puppeteer": "^25.0.0"
+  },
+  "resolutions": {
+    "postcss": "8.5.32",
+    "follow-redirects": "1.16.1",
+    "cheerio/undici": "7.30.1"
   }
 }
