@@ -49,8 +49,8 @@
     "postcss": "8.5.33",
     "follow-redirects": "1.16.3",
     "cheerio/undici": "7.30.2",
-    "@eslint/config-array/minimatch": "11.0.8",
-    "@typescript-eslint/typescript-estree/minimatch": "11.0.8",
-    "eslint/minimatch": "11.0.8"
+    "@eslint/config-array/minimatch": "11.0.9",
+    "@typescript-eslint/typescript-estree/minimatch": "11.0.9",
+    "eslint/minimatch": "11.0.9"
   }
 }
